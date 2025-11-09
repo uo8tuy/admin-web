@@ -95,6 +95,7 @@ export class MemStorage implements IStorage {
       role: userData.role || "viewer",
       roleLevel: userData.roleLevel || 10,
       permissions: userData.permissions || [],
+      brandIds: userData.brandIds || null,
       isActive: userData.isActive !== undefined ? userData.isActive : true,
       createdAt: now,
       updatedAt: now,

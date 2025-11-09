@@ -71,6 +71,19 @@ export const supportEmails = pgTable("support_emails", {
   receivedAt: timestamp("received_at").notNull().defaultNow(),
 });
 
+export const orders = pgTable("orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productName: text("product_name").notNull(),
+  location: text("location").notNull(),
+  quantity: integer("quantity").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  preferredDate: text("preferred_date").notNull(),
+  additionalNotes: text("additional_notes"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -94,6 +107,12 @@ export const insertSupportEmailSchema = createInsertSchema(supportEmails).omit({
   receivedAt: true,
 });
 
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
@@ -106,3 +125,5 @@ export type InsertProductClick = { productId: string };
 export type ProductClick = typeof productClicks.$inferSelect;
 export type InsertSupportEmail = z.infer<typeof insertSupportEmailSchema>;
 export type SupportEmail = typeof supportEmails.$inferSelect;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;

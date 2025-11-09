@@ -24,6 +24,9 @@ import {
 } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import type { Role } from "@shared/schema";
 
 const menuItems = [
   {
@@ -75,10 +78,28 @@ const menuItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  const { data: userRole } = useQuery<Role | null>({
+    queryKey: ["/admin/roles/user", user?.roleId],
+    enabled: !!user?.roleId,
+    queryFn: async () => {
+      if (!user?.roleId) return null;
+      const res = await fetch(`/admin/roles/${user.roleId}`);
+      if (!res.ok) return null;
+      return await res.json();
+    },
+  });
 
   const handleLogout = () => {
     window.location.href = "/admin/logout";
   };
+
+  // Filter menu items based on user's allowed pages
+  const allowedPages = userRole?.allowedPages || [];
+  const visibleMenuItems = menuItems.filter((item) => 
+    allowedPages.includes(item.url)
+  );
 
   return (
     <Sidebar>
@@ -90,7 +111,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

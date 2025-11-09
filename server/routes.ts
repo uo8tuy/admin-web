@@ -56,6 +56,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/admin/roles/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const role = await storage.getRole(parseInt(id));
+      
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      res.json(role);
+    } catch (error) {
+      console.error("Error fetching role:", error);
+      res.status(500).json({ message: "Failed to fetch role" });
+    }
+  });
+
   app.patch('/admin/roles/:id/pages', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

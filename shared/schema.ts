@@ -16,7 +16,7 @@ export const sessions = pgTable(
 
 // Roles table - stores all system roles
 export const roles = pgTable("roles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull().unique(),
   level: integer("level").notNull(),
   permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
@@ -32,7 +32,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  roleId: varchar("role_id").references(() => roles.id),
+  roleId: integer("role_id").references(() => roles.id),
   brandIds: text("brand_ids").array().default(sql`ARRAY[]::text[]`),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -96,9 +96,7 @@ export const orders = pgTable("orders", {
 export const userInvitations = pgTable("user_invitations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").notNull().unique(),
-  role: text("role").notNull(),
-  roleLevel: integer("role_level").notNull(),
-  permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
+  roleId: integer("role_id").notNull().references(() => roles.id),
   brandIds: text("brand_ids").array().default(sql`ARRAY[]::text[]`),
   inviterId: varchar("inviter_id").notNull(),
   status: text("status").notNull().default("pending"),

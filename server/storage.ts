@@ -58,6 +58,7 @@ export interface IStorage {
   trackProductClick(click: InsertProductClick): Promise<ProductClick>;
   
   getRoles(): Promise<import("@shared/schema").Role[]>;
+  updateRolePages(roleId: number, allowedPages: string[]): Promise<import("@shared/schema").Role | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -132,6 +133,9 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
   async getRoles(): Promise<Role[]> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
+  async updateRolePages(roleId: number, allowedPages: string[]): Promise<Role | undefined> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
 }
@@ -290,6 +294,15 @@ export class DatabaseStorage implements IStorage {
 
   async getRoles(): Promise<Role[]> {
     return await db.select().from(roles);
+  }
+
+  async updateRolePages(roleId: number, allowedPages: string[]): Promise<Role | undefined> {
+    const [role] = await db
+      .update(roles)
+      .set({ allowedPages })
+      .where(eq(roles.id, roleId))
+      .returning();
+    return role;
   }
 }
 

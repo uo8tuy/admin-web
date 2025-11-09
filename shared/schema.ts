@@ -20,6 +20,7 @@ export const roles = pgTable("roles", {
   name: text("name").notNull().unique(),
   level: integer("level").notNull(),
   permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
+  allowedPages: text("allowed_pages").array().notNull().default(sql`ARRAY[]::text[]`),
   isSystem: boolean("is_system").notNull().default(true),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

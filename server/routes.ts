@@ -38,13 +38,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/admin/roles', isAuthenticated, async (req, res) => {
+  app.get('/admin/roles', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
+      
+      // Only Super Admin (roleId=1) and Admin (roleId=2) can view roles
+      if (!currentUser || (currentUser.roleId !== 1 && currentUser.roleId !== 2)) {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+
       const roles = await storage.getRoles();
       res.json(roles);
     } catch (error) {
       console.error("Error fetching roles:", error);
       res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  app.patch('/admin/roles/:id/pages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
+      
+      // Only Super Admin (roleId=1) and Admin (roleId=2) can update role pages
+      if (!currentUser || (currentUser.roleId !== 1 && currentUser.roleId !== 2)) {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+
+      const { id } = req.params;
+      const { allowedPages } = req.body;
+      
+      const role = await storage.updateRolePages(parseInt(id), allowedPages);
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      res.json(role);
+    } catch (error) {
+      console.error("Error updating role pages:", error);
+      res.status(500).json({ message: "Failed to update role pages" });
     }
   });
 

@@ -37,11 +37,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/admin/roles', isAuthenticated, async (req, res) => {
+    try {
+      const roles = await storage.getRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
   app.patch('/admin/users/:id/role', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const { role, roleLevel, permissions, brandIds } = req.body;
-      const user = await storage.updateUserRole(id, role, roleLevel, permissions, brandIds);
+      const { roleId, brandIds } = req.body;
+      const user = await storage.updateUserRole(id, roleId, brandIds);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -101,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/admin/products/:id', isAuthenticated, async (req, res) => {
     try {
-      const product = await storage.getProduct(req.params.id);
+      const product = await storage.getProduct(parseInt(req.params.id));
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -150,7 +160,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not found" });
       }
 
-      const existingProduct = await storage.getProduct(req.params.id);
+      const productId = parseInt(req.params.id);
+      const existingProduct = await storage.getProduct(productId);
       if (!existingProduct) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -162,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const product = await storage.updateProduct(req.params.id, req.body);
+      const product = await storage.updateProduct(productId, req.body);
       res.json(product);
     } catch (error) {
       console.error("Error updating product:", error);
@@ -172,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/admin/products/:id', isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteProduct(req.params.id);
+      const success = await storage.deleteProduct(parseInt(req.params.id));
       if (!success) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -209,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/admin/categories/:id', isAuthenticated, async (req, res) => {
     try {
-      const category = await storage.updateCategory(req.params.id, req.body);
+      const category = await storage.updateCategory(parseInt(req.params.id), req.body);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -222,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/admin/categories/:id', isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.deleteCategory(req.params.id);
+      const success = await storage.deleteCategory(parseInt(req.params.id));
       if (!success) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -283,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/admin/emails/:id/read', isAuthenticated, async (req, res) => {
     try {
-      const success = await storage.markEmailAsRead(req.params.id);
+      const success = await storage.markEmailAsRead(parseInt(req.params.id));
       if (!success) {
         return res.status(404).json({ message: "Email not found" });
       }
@@ -296,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/admin/analytics/click', isAuthenticated, async (req, res) => {
     try {
-      const schema = z.object({ productId: z.string() });
+      const schema = z.object({ productId: z.number() });
       const validatedData = schema.parse(req.body);
       const click = await storage.trackProductClick(validatedData);
       res.status(201).json(click);

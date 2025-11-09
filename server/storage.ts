@@ -13,6 +13,7 @@ import {
   type InsertProductClick,
   type UserInvitation,
   type InsertUserInvitation,
+  type Role,
   users,
   products,
   categories,
@@ -20,6 +21,7 @@ import {
   supportEmails,
   productClicks,
   userInvitations,
+  roles,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -29,224 +31,96 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined>;
+  updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined>;
   
   getProducts(): Promise<Product[]>;
-  getProduct(id: string): Promise<Product | undefined>;
+  getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
-  updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
-  deleteProduct(id: string): Promise<boolean>;
+  updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<boolean>;
   
   getCategories(): Promise<Category[]>;
-  getCategory(id: string): Promise<Category | undefined>;
+  getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
-  updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
-  deleteCategory(id: string): Promise<boolean>;
+  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
   
   getBrands(): Promise<Brand[]>;
   createBrand(brand: InsertBrand): Promise<Brand>;
   
   getSupportEmails(): Promise<SupportEmail[]>;
   createSupportEmail(email: InsertSupportEmail): Promise<SupportEmail>;
-  markEmailAsRead(id: string): Promise<boolean>;
+  markEmailAsRead(id: number): Promise<boolean>;
   
   trackProductClick(click: InsertProductClick): Promise<ProductClick>;
+  
+  getRoles(): Promise<import("@shared/schema").Role[]>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private products: Map<string, Product>;
-  private categories: Map<string, Category>;
-  private brands: Map<string, Brand>;
-  private supportEmails: Map<string, SupportEmail>;
-  private productClicks: Map<string, ProductClick>;
-
-  constructor() {
-    this.users = new Map();
-    this.products = new Map();
-    this.categories = new Map();
-    this.brands = new Map();
-    this.supportEmails = new Map();
-    this.productClicks = new Map();
-  }
-
+  // MemStorage is not actively used - DatabaseStorage is used instead
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const existing = this.users.get(userData.id || "");
-    const now = new Date();
-    
-    if (existing) {
-      const updated: User = {
-        ...existing,
-        ...userData,
-        updatedAt: now,
-      };
-      this.users.set(updated.id, updated);
-      return updated;
-    }
-    
-    const id = userData.id || randomUUID();
-    const user: User = {
-      id,
-      email: userData.email || null,
-      firstName: userData.firstName || null,
-      lastName: userData.lastName || null,
-      profileImageUrl: userData.profileImageUrl || null,
-      role: userData.role || "viewer",
-      roleLevel: userData.roleLevel || 10,
-      permissions: userData.permissions || [],
-      brandIds: userData.brandIds || null,
-      isActive: userData.isActive !== undefined ? userData.isActive : true,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.users.set(id, user);
-    return user;
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updated: User = {
-      ...user,
-      role,
-      roleLevel,
-      permissions,
-      brandIds: brandIds || [],
-      updatedAt: new Date(),
-    };
-    this.users.set(id, updated);
-    return updated;
+  async updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async getProduct(id: string): Promise<Product | undefined> {
-    return this.products.get(id);
+  async getProduct(id: number): Promise<Product | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const id = randomUUID();
-    const product: Product = {
-      id,
-      name: insertProduct.name,
-      description: insertProduct.description,
-      performance: insertProduct.performance || null,
-      categoryId: insertProduct.categoryId,
-      brandId: insertProduct.brandId || null,
-      mainImage: insertProduct.mainImage || null,
-      additionalImages: insertProduct.additionalImages || null,
-      isActive: insertProduct.isActive !== undefined ? insertProduct.isActive : true,
-      createdAt: new Date(),
-    };
-    this.products.set(id, product);
-    return product;
+  async createProduct(product: InsertProduct): Promise<Product> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
-    const product = this.products.get(id);
-    if (!product) return undefined;
-    const updated = { ...product, ...updates };
-    this.products.set(id, updated);
-    return updated;
+  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async deleteProduct(id: string): Promise<boolean> {
-    return this.products.delete(id);
+  async deleteProduct(id: number): Promise<boolean> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async getCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values());
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async getCategory(id: string): Promise<Category | undefined> {
-    return this.categories.get(id);
+  async getCategory(id: number): Promise<Category | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const id = randomUUID();
-    const category: Category = {
-      id,
-      name: insertCategory.name,
-      isActive: insertCategory.isActive !== undefined ? insertCategory.isActive : true,
-      parentId: insertCategory.parentId || null,
-    };
-    this.categories.set(id, category);
-    return category;
+  async createCategory(category: InsertCategory): Promise<Category> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category | undefined> {
-    const category = this.categories.get(id);
-    if (!category) return undefined;
-    const updated = { ...category, ...updates };
-    this.categories.set(id, updated);
-    return updated;
+  async updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async deleteCategory(id: string): Promise<boolean> {
-    return this.categories.delete(id);
+  async deleteCategory(id: number): Promise<boolean> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async getBrands(): Promise<Brand[]> {
-    return Array.from(this.brands.values());
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async createBrand(insertBrand: InsertBrand): Promise<Brand> {
-    const id = randomUUID();
-    const brand: Brand = {
-      id,
-      name: insertBrand.name,
-      isActive: insertBrand.isActive !== undefined ? insertBrand.isActive : true,
-    };
-    this.brands.set(id, brand);
-    return brand;
+  async createBrand(brand: InsertBrand): Promise<Brand> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async getSupportEmails(): Promise<SupportEmail[]> {
-    return Array.from(this.supportEmails.values());
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async createSupportEmail(insertEmail: InsertSupportEmail): Promise<SupportEmail> {
-    const id = randomUUID();
-    const email: SupportEmail = {
-      id,
-      from: insertEmail.from,
-      subject: insertEmail.subject,
-      message: insertEmail.message,
-      isRead: insertEmail.isRead !== undefined ? insertEmail.isRead : false,
-      receivedAt: new Date(),
-    };
-    this.supportEmails.set(id, email);
-    return email;
+  async createSupportEmail(email: InsertSupportEmail): Promise<SupportEmail> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
-  async markEmailAsRead(id: string): Promise<boolean> {
-    const email = this.supportEmails.get(id);
-    if (!email) return false;
-    email.isRead = true;
-    this.supportEmails.set(id, email);
-    return true;
+  async markEmailAsRead(id: number): Promise<boolean> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-
   async trackProductClick(click: InsertProductClick): Promise<ProductClick> {
-    const id = randomUUID();
-    const productClick: ProductClick = {
-      id,
-      productId: click.productId,
-      clickedAt: new Date(),
-    };
-    this.productClicks.set(id, productClick);
-    return productClick;
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
+  async getRoles(): Promise<Role[]> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
 }
 
@@ -275,13 +149,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined> {
+  async updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set({
-        role,
-        roleLevel,
-        permissions,
+        roleId,
         brandIds: brandIds || [],
         updatedAt: new Date(),
       })
@@ -294,7 +166,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(products);
   }
 
-  async getProduct(id: string): Promise<Product | undefined> {
+  async getProduct(id: number): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.id, id));
     return product;
   }
@@ -304,7 +176,7 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
-  async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
+  async updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product | undefined> {
     const [product] = await db
       .update(products)
       .set(updates)
@@ -313,7 +185,7 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
-  async deleteProduct(id: string): Promise<boolean> {
+  async deleteProduct(id: number): Promise<boolean> {
     const result = await db.delete(products).where(eq(products.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
@@ -322,7 +194,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories);
   }
 
-  async getCategory(id: string): Promise<Category | undefined> {
+  async getCategory(id: number): Promise<Category | undefined> {
     const [category] = await db.select().from(categories).where(eq(categories.id, id));
     return category;
   }
@@ -332,7 +204,7 @@ export class DatabaseStorage implements IStorage {
     return category;
   }
 
-  async updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category | undefined> {
+  async updateCategory(id: number, updates: Partial<InsertCategory>): Promise<Category | undefined> {
     const [category] = await db
       .update(categories)
       .set(updates)
@@ -341,7 +213,7 @@ export class DatabaseStorage implements IStorage {
     return category;
   }
 
-  async deleteCategory(id: string): Promise<boolean> {
+  async deleteCategory(id: number): Promise<boolean> {
     const result = await db.delete(categories).where(eq(categories.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
@@ -364,7 +236,7 @@ export class DatabaseStorage implements IStorage {
     return email;
   }
 
-  async markEmailAsRead(id: string): Promise<boolean> {
+  async markEmailAsRead(id: number): Promise<boolean> {
     const result = await db
       .update(supportEmails)
       .set({ isRead: true })
@@ -375,6 +247,10 @@ export class DatabaseStorage implements IStorage {
   async trackProductClick(click: InsertProductClick): Promise<ProductClick> {
     const [productClick] = await db.insert(productClicks).values(click).returning();
     return productClick;
+  }
+
+  async getRoles(): Promise<Role[]> {
+    return await db.select().from(roles);
   }
 }
 

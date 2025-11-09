@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Edit, Trash2, Power, Shield, Info } from "lucide-react";
+import { Plus, Search, Edit, Shield, Info, CheckCircle2, Clock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -34,17 +34,20 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
-import type { User } from "@shared/schema";
+import type { User, Role } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
-import { canManageUser, getAssignableRoles, getAllRoles, ROLES } from "@shared/roles";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { canManageUserByRoleId, getAssignableRolesByRoleId } from "@shared/roles";
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("");
+  const [inviteRoleId, setInviteRoleId] = useState("");
+  const [editRoleId, setEditRoleId] = useState("");
   
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -53,13 +56,18 @@ export default function Users() {
     queryKey: ["/admin/users"],
   });
 
-  // Get assignable roles - default to all roles if user data isn't loaded yet
-  const assignableRoles = currentUser?.role 
-    ? getAssignableRoles(currentUser.role) 
-    : getAllRoles(); // Show all roles as fallback
+  const { data: roles = [] } = useQuery<Role[]>({
+    queryKey: ["/admin/roles"],
+  });
+
+  const getRoleName = (roleId: number | null) => {
+    if (!roleId) return "No Role";
+    const role = roles.find(r => r.id === roleId);
+    return role?.name || `Role #${roleId}`;
+  };
 
   const addUserMutation = useMutation({
-    mutationFn: async (data: { email: string; role: string }) => {
+    mutationFn: async (data: { email: string; roleId: number }) => {
       const res = await apiRequest("POST", "/admin/users/invite", data);
       return await res.json();
     },
@@ -67,7 +75,7 @@ export default function Users() {
       queryClient.invalidateQueries({ queryKey: ["/admin/users"] });
       setShowAddDialog(false);
       setInviteEmail("");
-      setInviteRole("");
+      setInviteRoleId("");
       toast({
         title: "User Invited",
         description: "When they sign in, they'll automatically get the assigned role.",
@@ -82,18 +90,50 @@ export default function Users() {
     },
   });
 
+  const updateRoleMutation = useMutation({
+    mutationFn: async (data: { userId: string; roleId: number }) => {
+      const res = await apiRequest("PATCH", `/admin/users/${data.userId}/role`, { roleId: data.roleId });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/admin/users"] });
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      setEditRoleId("");
+      toast({
+        title: "Role Updated",
+        description: "User role has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredUsers = users.filter((user) =>
     (user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ((user.firstName || "") + " " + (user.lastName || "")).toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  // Filter users based on role-based access control
   const visibleUsers = filteredUsers.filter((user) => {
-    if (!currentUser || !currentUser.role) return false;
-    return canManageUser(currentUser.role, user.role || "");
+    if (!currentUser || !currentUser.roleId) return false;
+    return canManageUserByRoleId(currentUser.roleId, user.roleId);
   });
 
+  // Get assignable roles for current user
+  const assignableRoleIds = currentUser?.roleId 
+    ? getAssignableRolesByRoleId(currentUser.roleId)
+    : [];
+  
+  const assignableRoles = roles.filter(role => assignableRoleIds.includes(role.id));
+
   const handleInviteUser = () => {
-    if (!inviteEmail || !inviteRole) {
+    if (!inviteEmail || !inviteRoleId) {
       toast({
         title: "Missing Information",
         description: "Please enter an email and select a role",
@@ -101,7 +141,25 @@ export default function Users() {
       });
       return;
     }
-    addUserMutation.mutate({ email: inviteEmail, role: inviteRole });
+    addUserMutation.mutate({ email: inviteEmail, roleId: parseInt(inviteRoleId) });
+  };
+
+  const handleEditRole = (user: User) => {
+    setSelectedUser(user);
+    setEditRoleId(user.roleId?.toString() || "");
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateRole = () => {
+    if (!selectedUser || !editRoleId) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a role",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateRoleMutation.mutate({ userId: selectedUser.id, roleId: parseInt(editRoleId) });
   };
 
   if (isLoading) {
@@ -120,11 +178,11 @@ export default function Users() {
           <p className="text-muted-foreground mt-1">
             Manage admin users and their permissions
           </p>
-          {currentUser?.role && (
+          {currentUser?.roleId && (
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className="gap-1">
                 <Shield className="h-3 w-3" />
-                Your Role: {currentUser.role}
+                Your Role: {getRoleName(currentUser.roleId)}
               </Badge>
             </div>
           )}
@@ -177,43 +235,44 @@ export default function Users() {
                 {visibleUsers.map((user) => (
                   <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                     <TableCell className="font-medium">
-                      {user.firstName} {user.lastName}
+                      {user.firstName && user.lastName 
+                        ? `${user.firstName} ${user.lastName}`
+                        : user.email?.split('@')[0] || "N/A"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{user.role || "No Role"}</Badge>
+                      <Badge variant="outline">{getRoleName(user.roleId)}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.isActive ? "default" : "secondary"}>
-                        {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={user.isActive ? "default" : "secondary"}>
+                          {user.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                        {user.verificationStatus === "pending" ? (
+                          <Badge variant="outline" className="gap-1">
+                            <Clock className="h-3 w-3" />
+                            Pending
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          data-testid={`button-toggle-${user.id}`}
-                        >
-                          <Power className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          data-testid={`button-edit-${user.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          data-testid={`button-delete-${user.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditRole(user)}
+                        data-testid={`button-edit-${user.id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Role
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -245,22 +304,16 @@ export default function Users() {
             </div>
             <div>
               <Label htmlFor="role">Role</Label>
-              <Select value={inviteRole} onValueChange={setInviteRole}>
+              <Select value={inviteRoleId} onValueChange={setInviteRoleId}>
                 <SelectTrigger data-testid="select-invite-role">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {assignableRoles.map((roleName) => {
-                    const roleKey = Object.keys(ROLES).find(
-                      key => ROLES[key as keyof typeof ROLES].name === roleName
-                    ) as keyof typeof ROLES | undefined;
-                    const role = roleKey ? ROLES[roleKey] : null;
-                    return (
-                      <SelectItem key={roleName} value={roleName}>
-                        {roleName} {role ? `(Level ${role.level})` : ""}
-                      </SelectItem>
-                    );
-                  })}
+                  {assignableRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.id.toString()}>
+                      {role.name} (Level {role.level})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -279,6 +332,50 @@ export default function Users() {
               data-testid="button-confirm-invite"
             >
               {addUserMutation.isPending ? "Inviting..." : "Invite User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent data-testid="dialog-edit-role">
+          <DialogHeader>
+            <DialogTitle>Edit User Role</DialogTitle>
+            <DialogDescription>
+              Update the role for {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-role">Role</Label>
+              <Select value={editRoleId} onValueChange={setEditRoleId}>
+                <SelectTrigger data-testid="select-edit-role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {assignableRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.id.toString()}>
+                      {role.name} (Level {role.level})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditDialog(false)}
+              data-testid="button-cancel-edit"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateRole}
+              disabled={updateRoleMutation.isPending}
+              data-testid="button-confirm-edit"
+            >
+              {updateRoleMutation.isPending ? "Updating..." : "Update Role"}
             </Button>
           </DialogFooter>
         </DialogContent>

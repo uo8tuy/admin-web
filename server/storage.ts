@@ -29,9 +29,12 @@ import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined>;
+  createInvitedUser(email: string, roleId: number, brandIds?: number[]): Promise<User>;
+  deletePendingUser(email: string): Promise<void>;
   
   getProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
@@ -62,6 +65,9 @@ export class MemStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
   async upsertUser(userData: UpsertUser): Promise<User> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
@@ -69,6 +75,12 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
   async updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
+  async createInvitedUser(email: string, roleId: number, brandIds?: number[]): Promise<User> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
+  async deletePendingUser(email: string): Promise<void> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
   async getProducts(): Promise<Product[]> {
@@ -130,6 +142,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -160,6 +177,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async createInvitedUser(email: string, roleId: number, brandIds?: number[]): Promise<User> {
+    const tempId = `pending_${email}`;
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: tempId,
+        email,
+        roleId,
+        brandIds: brandIds || [],
+        verificationStatus: "pending",
+        isActive: false, // Inactive until they verify
+      })
+      .returning();
+    return user;
+  }
+
+  async deletePendingUser(email: string): Promise<void> {
+    await db
+      .delete(users)
+      .where(eq(users.email, email));
   }
 
   async getProducts(): Promise<Product[]> {

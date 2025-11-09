@@ -194,3 +194,62 @@ export function hasPermission(roleName: string, permission: string): boolean {
     permissions.includes("all_access" as any)
   );
 }
+
+// Helper to get role name from roleId (1=Super Admin, 2=Admin, etc.)
+export function getRoleNameById(roleId: number): string | null {
+  const roleMap: Record<number, string> = {
+    1: "Super Admin",
+    2: "Admin",
+    3: "Category Manager",
+    4: "Product Manager",
+    5: "Support Manager",
+    6: "Support Staff",
+    7: "Viewer",
+  };
+  return roleMap[roleId] || null;
+}
+
+// Helper function to check if actor can manage target user by roleId
+export function canManageUserByRoleId(actorRoleId: number | null, targetRoleId: number | null): boolean {
+  if (!actorRoleId) return false;
+  if (!targetRoleId) return true; // Can manage users with no role
+  
+  const actorRole = getRoleNameById(actorRoleId);
+  const targetRole = getRoleNameById(targetRoleId);
+  
+  if (!actorRole) return false;
+  if (!targetRole) return true;
+  
+  return canManageUser(actorRole, targetRole);
+}
+
+// Helper function to get roles that a user can assign by roleId
+export function getAssignableRolesByRoleId(actorRoleId: number | null): number[] {
+  if (!actorRoleId) return [];
+  
+  const actorRole = getRoleNameById(actorRoleId);
+  if (!actorRole) return [];
+  
+  const actorLevel = getRoleLevel(actorRole);
+  
+  // Super Admin can assign all roles (1-7)
+  if (actorLevel >= 100) {
+    return [1, 2, 3, 4, 5, 6, 7];
+  }
+  
+  // Others can only assign lower roles
+  const roleIdMap: Record<string, number> = {
+    "Super Admin": 1,
+    "Admin": 2,
+    "Category Manager": 3,
+    "Product Manager": 4,
+    "Support Manager": 5,
+    "Support Staff": 6,
+    "Viewer": 7,
+  };
+  
+  return Object.values(ROLES)
+    .filter((r) => r.level < actorLevel)
+    .map((r) => roleIdMap[r.name])
+    .filter((id): id is number => id !== undefined);
+}

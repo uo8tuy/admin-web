@@ -27,13 +27,14 @@ export const roles = pgTable("roles", {
 
 // User storage table for Replit Auth
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey(), // Replit Auth provides string IDs
+  id: varchar("id").primaryKey(), // Replit Auth provides string IDs (or temporary ID for pending invites)
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   roleId: bigint("role_id", { mode: "number" }).references(() => roles.id),
   brandIds: bigint("brand_ids", { mode: "number" }).array().default(sql`ARRAY[]::bigint[]`),
+  verificationStatus: varchar("verification_status").notNull().default("pending"), // "pending" | "verified"
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

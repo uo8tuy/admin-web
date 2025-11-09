@@ -53,13 +53,48 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
-  });
+  const email = claims["email"];
+  const replitAuthId = claims["sub"];
+  
+  // Check if user was invited (pending status)
+  const existingUser = await storage.getUserByEmail(email);
+  
+  if (existingUser && existingUser.verificationStatus === "pending") {
+    // Delete the pending record first
+    await storage.deletePendingUser(email);
+    
+    // Create verified user with Replit Auth data, keeping the assigned role/brands
+    await storage.upsertUser({
+      id: replitAuthId,
+      email,
+      firstName: claims["first_name"],
+      lastName: claims["last_name"],
+      profileImageUrl: claims["profile_image_url"],
+      roleId: existingUser.roleId, // Keep assigned role
+      brandIds: existingUser.brandIds, // Keep assigned brands
+      verificationStatus: "verified",
+      isActive: true,
+    });
+  } else if (!existingUser) {
+    // First time sign-in, create new user without role
+    await storage.upsertUser({
+      id: replitAuthId,
+      email,
+      firstName: claims["first_name"],
+      lastName: claims["last_name"],
+      profileImageUrl: claims["profile_image_url"],
+      verificationStatus: "verified",
+    });
+  } else {
+    // User already exists and is verified, just update their info
+    await storage.upsertUser({
+      id: replitAuthId,
+      email,
+      firstName: claims["first_name"],
+      lastName: claims["last_name"],
+      profileImageUrl: claims["profile_image_url"],
+    });
+  }
 }
 
 export async function setupAuth(app: Express) {

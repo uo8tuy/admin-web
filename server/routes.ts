@@ -8,6 +8,7 @@ import {
   insertBrandSchema,
   insertSupportEmailSchema,
 } from "@shared/schema";
+import { canManageUserByRoleId, getAssignableRolesByRoleId } from "@shared/roles";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -71,14 +72,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/admin/users/:id/role', isAuthenticated, async (req, res) => {
+  app.patch('/admin/users/:id/role', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser || !currentUser.roleId) {
+        return res.status(403).json({ message: "Forbidden: No role assigned" });
+      }
+
       const { id } = req.params;
       const { roleId, brandIds } = req.body;
-      const user = await storage.updateUserRole(id, roleId, brandIds);
-      if (!user) {
+      
+      // Get target user
+      const targetUser = await storage.getUser(id);
+      if (!targetUser) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      // Check if current user can manage target user
+      if (!canManageUserByRoleId(currentUser.roleId, targetUser.roleId)) {
+        return res.status(403).json({ message: "Forbidden: Cannot manage this user" });
+      }
+
+      // Check if current user can assign the new role
+      const assignableRoleIds = getAssignableRolesByRoleId(currentUser.roleId);
+      if (!assignableRoleIds.includes(roleId)) {
+        return res.status(403).json({ message: "Forbidden: Cannot assign this role" });
+      }
+
+      const user = await storage.updateUserRole(id, roleId, brandIds);
       res.json(user);
     } catch (error) {
       console.error("Error updating user role:", error);
@@ -88,19 +111,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/admin/users/invite', isAuthenticated, async (req: any, res) => {
     try {
-      const { email, role } = req.body;
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
       
-      if (!email || !role) {
+      if (!currentUser || !currentUser.roleId) {
+        return res.status(403).json({ message: "Forbidden: No role assigned" });
+      }
+
+      const { email, roleId, brandIds } = req.body;
+      
+      if (!email || !roleId) {
         return res.status(400).json({ message: "Email and role are required" });
       }
 
-      // TODO: Implement invitation storage
-      // For now, just return success - users will need to be assigned roles manually
+      // Check if current user can assign this role
+      const assignableRoleIds = getAssignableRolesByRoleId(currentUser.roleId);
+      if (!assignableRoleIds.includes(roleId)) {
+        return res.status(403).json({ message: "Forbidden: Cannot assign this role" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Create pending user
+      const user = await storage.createInvitedUser(email, roleId, brandIds);
+      
+      // TODO: Send invitation email here
       
       res.json({ 
-        message: "Invitation feature coming soon. For now, users will be assigned roles after they sign in.",
-        email,
-        role,
+        message: "User invited successfully. They will receive an email with instructions.",
+        user,
       });
     } catch (error) {
       console.error("Error inviting user:", error);

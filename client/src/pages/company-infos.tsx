@@ -8,15 +8,56 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Plus, Search, MapPin, Calendar, User, Mail, Phone, Globe, Facebook, Instagram, Twitter, Linkedin, Youtube } from "lucide-react";
 import type { CompanyInfo } from "@shared/schema";
 
+const COUNTRIES = [
+  "Mongolia",
+  "China",
+  "Japan",
+  "South Korea",
+  "Russia",
+  "United States",
+  "United Kingdom",
+  "Germany",
+  "France",
+  "Australia",
+  "Canada",
+  "India",
+  "Singapore",
+  "Thailand",
+  "Vietnam",
+  "Kazakhstan",
+];
+
+const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  "Mongolia": ["Ulaanbaatar", "Erdenet", "Darkhan", "Choibalsan"],
+  "China": ["Beijing", "Shanghai", "Guangzhou", "Shenzhen", "Chengdu", "Hong Kong"],
+  "Japan": ["Tokyo", "Osaka", "Kyoto", "Yokohama", "Nagoya"],
+  "South Korea": ["Seoul", "Busan", "Incheon", "Daegu"],
+  "Russia": ["Moscow", "Saint Petersburg", "Novosibirsk", "Yekaterinburg"],
+  "United States": ["New York", "Los Angeles", "Chicago", "Houston", "San Francisco"],
+  "United Kingdom": ["London", "Manchester", "Birmingham", "Edinburgh"],
+  "Germany": ["Berlin", "Munich", "Hamburg", "Frankfurt"],
+  "France": ["Paris", "Lyon", "Marseille", "Toulouse"],
+  "Australia": ["Sydney", "Melbourne", "Brisbane", "Perth"],
+  "Canada": ["Toronto", "Vancouver", "Montreal", "Calgary"],
+  "India": ["Mumbai", "Delhi", "Bangalore", "Hyderabad"],
+  "Singapore": ["Singapore"],
+  "Thailand": ["Bangkok", "Chiang Mai", "Phuket"],
+  "Vietnam": ["Hanoi", "Ho Chi Minh City", "Da Nang"],
+  "Kazakhstan": ["Almaty", "Nur-Sultan", "Shymkent"],
+};
+
 export default function CompanyInfos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyInfo | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("");
   const { toast} = useToast();
   
   const { data: companies = [], isLoading } = useQuery<CompanyInfo[]>({
@@ -122,9 +163,20 @@ export default function CompanyInfos() {
             Manage company information and details
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setEditingCompany(null);
+            setSelectedCountry("");
+            setSelectedCity("");
+          }
+        }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingCompany(null)} data-testid="button-add-company">
+            <Button onClick={() => {
+              setEditingCompany(null);
+              setSelectedCountry("");
+              setSelectedCity("");
+            }} data-testid="button-add-company">
               <Plus className="h-4 w-4 mr-2" />
               Add Company Info
             </Button>
@@ -170,23 +222,46 @@ export default function CompanyInfos() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    name="country"
-                    placeholder="e.g., Mongolia, China"
-                    defaultValue={editingCompany?.country || ""}
-                    data-testid="input-country"
-                  />
+                  <Select
+                    value={selectedCountry || editingCompany?.country || ""}
+                    onValueChange={(value) => {
+                      setSelectedCountry(value);
+                      setSelectedCity("");
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-country">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="country" value={selectedCountry || editingCompany?.country || ""} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">City/Location</Label>
-                  <Input
-                    id="location"
-                    name="location"
-                    placeholder="e.g., Ulaanbaatar, Beijing"
-                    defaultValue={editingCompany?.location || ""}
-                    data-testid="input-location"
-                  />
+                  <Select
+                    key={selectedCountry || editingCompany?.country}
+                    value={selectedCity || ""}
+                    disabled={!selectedCountry && !editingCompany?.country}
+                    onValueChange={(value) => setSelectedCity(value)}
+                  >
+                    <SelectTrigger data-testid="select-location">
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(CITIES_BY_COUNTRY[selectedCountry || editingCompany?.country || ""] || []).map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="location" value={selectedCity} />
                 </div>
               </div>
 
@@ -450,6 +525,8 @@ export default function CompanyInfos() {
                       className="flex-1"
                       onClick={() => {
                         setEditingCompany(company);
+                        setSelectedCountry(company.country || "");
+                        setSelectedCity(company.location || "");
                         setIsDialogOpen(true);
                       }}
                       data-testid={`button-edit-${company.id}`}

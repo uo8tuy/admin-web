@@ -116,44 +116,44 @@ export const userInvitations = pgTable("user_invitations", {
 export const insertRoleSchema = createInsertSchema(roles).omit({
   id: true,
   createdAt: true,
-});
+} as any);
 
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
-});
+} as any);
 
 export const insertCompanyInfoSchema = createInsertSchema(companyInfos).omit({
   id: true,
   createdAt: true,
-});
+} as any);
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
-});
+} as any);
 
 export const insertSupportEmailSchema = createInsertSchema(supportEmails).omit({
   id: true,
   receivedAt: true,
-});
+} as any);
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   status: true,
   createdAt: true,
-});
+} as any);
 
 export const insertUserInvitationSchema = createInsertSchema(userInvitations).omit({
   id: true,
   status: true,
   createdAt: true,
   acceptedAt: true,
-});
+} as any);
 
 export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type Role = typeof roles.$inferSelect;

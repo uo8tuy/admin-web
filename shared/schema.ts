@@ -1,17 +1,32 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, timestamp, integer, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const adminUsers = pgTable("admin_users", {
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table for Replit Auth
+export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull(),
-  role: text("role").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: text("role").notNull().default("viewer"),
+  roleLevel: integer("role_level").notNull().default(10),
   permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
   isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const categories = pgTable("categories", {
@@ -55,9 +70,9 @@ export const supportEmails = pgTable("support_emails", {
   receivedAt: timestamp("received_at").notNull().defaultNow(),
 });
 
-export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
-  id: true,
+export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -78,8 +93,8 @@ export const insertSupportEmailSchema = createInsertSchema(supportEmails).omit({
   receivedAt: true,
 });
 
-export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
-export type AdminUser = typeof adminUsers.$inferSelect;
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 export type InsertBrand = z.infer<typeof insertBrandSchema>;

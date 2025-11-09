@@ -7,6 +7,7 @@ import {
   BarChart3,
   Tag,
   Shield,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -18,8 +19,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   {
@@ -67,6 +70,10 @@ const menuItems = [
 export function AppSidebar() {
   const [location] = useLocation();
 
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -95,6 +102,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="p-4">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start"
+          data-testid="button-logout"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Logout</span>
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

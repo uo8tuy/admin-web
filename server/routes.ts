@@ -60,13 +60,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email and role are required" });
       }
 
-      const userId = req.user.claims.sub;
-      
-      // Store the invitation - when user logs in with this email, they'll get this role
-      await storage.createUserInvitation(email, role, userId);
+      // TODO: Implement invitation storage
+      // For now, just return success - users will need to be assigned roles manually
       
       res.json({ 
-        message: "User invited successfully",
+        message: "Invitation feature coming soon. For now, users will be assigned roles after they sign in.",
         email,
         role,
       });

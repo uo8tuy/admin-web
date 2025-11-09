@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/alert";
 import type { User } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
-import { canManageUser, getAssignableRoles, ROLES } from "@shared/roles";
+import { canManageUser, getAssignableRoles, getAllRoles, ROLES } from "@shared/roles";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -53,7 +53,10 @@ export default function Users() {
     queryKey: ["/admin/users"],
   });
 
-  const assignableRoles = currentUser?.role ? getAssignableRoles(currentUser.role) : [];
+  // Get assignable roles - default to all roles if user data isn't loaded yet
+  const assignableRoles = currentUser?.role 
+    ? getAssignableRoles(currentUser.role) 
+    : getAllRoles(); // Show all roles as fallback
 
   const addUserMutation = useMutation({
     mutationFn: async (data: { email: string; role: string }) => {

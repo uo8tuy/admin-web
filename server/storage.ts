@@ -31,10 +31,6 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined>;
   
-  createUserInvitation(email: string, role: string, inviterId: string): Promise<UserInvitation>;
-  getInvitationByEmail(email: string): Promise<UserInvitation | undefined>;
-  markInvitationAccepted(invitationId: string): Promise<boolean>;
-  
   getProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;

@@ -54,6 +54,7 @@ export const companyInfos = pgTable("company_infos", {
   foundedDate: text("founded_date"),
   logo: text("logo"),
   founder: text("founder"),
+  country: text("country"),
   location: text("location"),
   contactInfo: jsonb("contact_info"), // { email, phone, website, facebook, instagram, twitter, linkedin, youtube }
   isActive: boolean("is_active").notNull().default(true),

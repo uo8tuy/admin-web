@@ -88,6 +88,7 @@ export default function CompanyInfos() {
       foundedDate: formData.get("foundedDate") || null,
       logo: formData.get("logo") || null,
       founder: formData.get("founder") || null,
+      country: formData.get("country") || null,
       location: formData.get("location") || null,
       contactInfo,
       isActive: formData.get("isActive") === "true",
@@ -166,15 +167,27 @@ export default function CompanyInfos() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  placeholder="City, Country"
-                  defaultValue={editingCompany?.location || ""}
-                  data-testid="input-location"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    placeholder="e.g., Mongolia, China"
+                    defaultValue={editingCompany?.country || ""}
+                    data-testid="input-country"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">City/Location</Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    placeholder="e.g., Ulaanbaatar, Beijing"
+                    defaultValue={editingCompany?.location || ""}
+                    data-testid="input-location"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

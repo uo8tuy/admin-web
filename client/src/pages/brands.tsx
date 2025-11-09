@@ -1,19 +1,30 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BrandItem } from "@/components/brand-item";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
-
-//todo: remove mock functionality
-const mockBrands = [
-  { id: "1", name: "AudioTech", isActive: true, productCount: 45 },
-  { id: "2", name: "TechWear", isActive: true, productCount: 32 },
-  { id: "3", name: "SportFit", isActive: true, productCount: 28 },
-  { id: "4", name: "BrewMaster", isActive: false, productCount: 15 },
-  { id: "5", name: "FitLife", isActive: true, productCount: 22 },
-  { id: "6", name: "HomeEssentials", isActive: true, productCount: 38 },
-];
+import type { Brand } from "@shared/schema";
 
 export default function Brands() {
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const { data: brands = [], isLoading } = useQuery<Brand[]>({
+    queryKey: ["/api/brands"],
+  });
+
+  const filteredBrands = brands.filter((brand) =>
+    brand.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-muted-foreground">Loading brands...</div>
+        </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -34,21 +45,34 @@ export default function Brands() {
         <Input
           placeholder="Search brands..."
           className="pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           data-testid="input-search"
         />
       </div>
 
-      <div className="space-y-3">
-        {mockBrands.map((brand) => (
-          <BrandItem
-            key={brand.id}
-            {...brand}
-            onToggle={() => console.log("Toggle", brand.id)}
-            onEdit={() => console.log("Edit", brand.id)}
-            onDelete={() => console.log("Delete", brand.id)}
-          />
-        ))}
-      </div>
+      {filteredBrands.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {brands.length === 0
+            ? "No brands yet. Click 'Add Brand' to create one."
+            : "No brands match your search."}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredBrands.map((brand) => (
+            <BrandItem
+              key={brand.id}
+              id={brand.id}
+              name={brand.name}
+              isActive={brand.isActive}
+              productCount={0}
+              onToggle={() => console.log("Toggle", brand.id)}
+              onEdit={() => console.log("Edit", brand.id)}
+              onDelete={() => console.log("Delete", brand.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { EmailPreview } from "@/components/email-preview";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -8,51 +10,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const mockEmails = [
-  {
-    id: "1",
-    from: "customer@example.com",
-    subject: "Question about product availability",
-    message: "Hi, I was wondering if the wireless headphones are still in stock? I'd like to order 5 units for my team.",
-    isRead: false,
-    receivedAt: "2 hours ago",
-  },
-  {
-    id: "2",
-    from: "support@vendor.com",
-    subject: "Order #12345 shipping delay",
-    message: "We regret to inform you that there will be a slight delay in shipping your order due to weather conditions.",
-    isRead: false,
-    receivedAt: "5 hours ago",
-  },
-  {
-    id: "3",
-    from: "john.smith@company.com",
-    subject: "Partnership opportunity",
-    message: "Hello, I represent a company interested in partnering with you for our upcoming product launch.",
-    isRead: true,
-    receivedAt: "Yesterday",
-  },
-  {
-    id: "4",
-    from: "feedback@customer.com",
-    subject: "Great service!",
-    message: "Just wanted to say thank you for the excellent customer service. The product arrived quickly and works perfectly.",
-    isRead: true,
-    receivedAt: "2 days ago",
-  },
-  {
-    id: "5",
-    from: "inquiry@business.com",
-    subject: "Bulk order pricing",
-    message: "We're interested in placing a bulk order of 100+ units. Can you provide pricing information and delivery timeframe?",
-    isRead: true,
-    receivedAt: "3 days ago",
-  },
-];
+import type { SupportEmail } from "@shared/schema";
+import { formatDistanceToNow } from "date-fns";
 
 export default function Emails() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<string>("all");
+  
+  const { data: emails = [], isLoading } = useQuery<SupportEmail[]>({
+    queryKey: ["/api/emails"],
+  });
+
+  const filteredEmails = emails.filter((email) => {
+    const matchesSearch =
+      email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.subject.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "unread" && !email.isRead) ||
+      (filter === "read" && email.isRead);
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-muted-foreground">Loading emails...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -68,10 +57,12 @@ export default function Emails() {
           <Input
             placeholder="Search emails..."
             className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             data-testid="input-search"
           />
         </div>
-        <Select defaultValue="all">
+        <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-[180px]" data-testid="select-filter">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
@@ -83,15 +74,28 @@ export default function Emails() {
         </Select>
       </div>
 
-      <div className="space-y-3">
-        {mockEmails.map((email) => (
-          <EmailPreview
-            key={email.id}
-            {...email}
-            onClick={() => console.log("Open email", email.id)}
-          />
-        ))}
-      </div>
+      {filteredEmails.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {emails.length === 0
+            ? "No support emails yet."
+            : "No emails match your filters."}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredEmails.map((email) => (
+            <EmailPreview
+              key={email.id}
+              id={email.id}
+              from={email.from}
+              subject={email.subject}
+              message={email.message}
+              isRead={email.isRead}
+              receivedAt={formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
+              onClick={() => console.log("Open email", email.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

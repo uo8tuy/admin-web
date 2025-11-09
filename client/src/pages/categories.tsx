@@ -1,18 +1,30 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CategoryItem } from "@/components/category-item";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
-
-const mockCategories = [
-  { id: "1", name: "Electronics", isActive: true, productCount: 234 },
-  { id: "2", name: "Clothing", isActive: true, productCount: 156 },
-  { id: "3", name: "Home & Garden", isActive: true, productCount: 189 },
-  { id: "4", name: "Sports & Outdoors", isActive: false, productCount: 67 },
-  { id: "5", name: "Books", isActive: true, productCount: 423 },
-  { id: "6", name: "Toys & Games", isActive: true, productCount: 98 },
-];
+import type { Category } from "@shared/schema";
 
 export default function Categories() {
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const { data: categories = [], isLoading } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-muted-foreground">Loading categories...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -33,21 +45,34 @@ export default function Categories() {
         <Input
           placeholder="Search categories..."
           className="pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           data-testid="input-search"
         />
       </div>
 
-      <div className="space-y-3">
-        {mockCategories.map((category) => (
-          <CategoryItem
-            key={category.id}
-            {...category}
-            onToggle={() => console.log("Toggle", category.id)}
-            onEdit={() => console.log("Edit", category.id)}
-            onDelete={() => console.log("Delete", category.id)}
-          />
-        ))}
-      </div>
+      {filteredCategories.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {categories.length === 0
+            ? "No categories yet. Click 'Add Category' to create one."
+            : "No categories match your search."}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredCategories.map((category) => (
+            <CategoryItem
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              isActive={category.isActive}
+              productCount={0}
+              onToggle={() => console.log("Toggle", category.id)}
+              onEdit={() => console.log("Edit", category.id)}
+              onDelete={() => console.log("Delete", category.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

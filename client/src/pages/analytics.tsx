@@ -1,36 +1,6 @@
 import { StatCard } from "@/components/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Eye, MousePointerClick, Users } from "lucide-react";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-
-const mockClickData = [
-  { day: "Mon", clicks: 234 },
-  { day: "Tue", clicks: 289 },
-  { day: "Wed", clicks: 312 },
-  { day: "Thu", clicks: 267 },
-  { day: "Fri", clicks: 345 },
-  { day: "Sat", clicks: 412 },
-  { day: "Sun", clicks: 389 },
-];
-
-const mockProductClicks = [
-  { id: "1", name: "Wireless Headphones", clicks: 1234, category: "Electronics" },
-  { id: "2", name: "Smart Watch", clicks: 987, category: "Electronics" },
-  { id: "3", name: "Running Shoes", clicks: 856, category: "Sports" },
-  { id: "4", name: "Laptop Stand", clicks: 743, category: "Home" },
-  { id: "5", name: "Coffee Maker", clicks: 621, category: "Home" },
-  { id: "6", name: "Yoga Mat", clicks: 534, category: "Sports" },
-  { id: "7", name: "Desk Lamp", clicks: 489, category: "Home" },
-  { id: "8", name: "Water Bottle", clicks: 412, category: "Sports" },
-];
 
 export default function Analytics() {
   return (
@@ -45,97 +15,41 @@ export default function Analytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Views"
-          value="24.5K"
+          value="0"
           icon={Eye}
-          change="+15% this week"
-          changeType="positive"
+          change="No data yet"
+          changeType="neutral"
         />
         <StatCard
           title="Product Clicks"
-          value="15.2K"
+          value="0"
           icon={MousePointerClick}
-          change="+8% this week"
-          changeType="positive"
+          change="No data yet"
+          changeType="neutral"
         />
         <StatCard
           title="Avg. Click Rate"
-          value="62%"
+          value="0%"
           icon={TrendingUp}
-          change="+3% this week"
-          changeType="positive"
+          change="No data yet"
+          changeType="neutral"
         />
         <StatCard
           title="Active Visitors"
-          value="3.2K"
+          value="0"
           icon={Users}
-          change="-2% this week"
-          changeType="negative"
+          change="No data yet"
+          changeType="neutral"
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Click Trends (Last 7 Days)</CardTitle>
+          <CardTitle>Analytics Dashboard</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={mockClickData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis
-                dataKey="day"
-                className="text-xs"
-                tick={{ fill: "hsl(var(--muted-foreground))" }}
-              />
-              <YAxis
-                className="text-xs"
-                tick={{ fill: "hsl(var(--muted-foreground))" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "var(--radius)",
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="clicks"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={{ fill: "hsl(var(--primary))", r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Most Clicked Products</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {mockProductClicks.map((product, index) => (
-              <div
-                key={product.id}
-                className="flex items-center justify-between p-3 rounded-md hover-elevate"
-                data-testid={`item-product-${index}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">{product.category}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">{product.clicks.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">clicks</p>
-                </div>
-              </div>
-            ))}
+          <div className="text-muted-foreground">
+            Analytics tracking will be available once you start recording product clicks and user interactions.
           </div>
         </CardContent>
       </Card>

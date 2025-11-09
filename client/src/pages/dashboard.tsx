@@ -1,33 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { StatCard } from "@/components/stat-card";
 import { Package, Users, Mail, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-
-const mockChartData = [
-  { name: "Electronics", value: 45 },
-  { name: "Clothing", value: 32 },
-  { name: "Home", value: 28 },
-  { name: "Sports", value: 22 },
-  { name: "Books", value: 18 },
-];
-
-const mockTopProducts = [
-  { id: "1", name: "Wireless Headphones", clicks: 1234 },
-  { id: "2", name: "Smart Watch", clicks: 987 },
-  { id: "3", name: "Laptop Stand", clicks: 856 },
-  { id: "4", name: "USB-C Cable", clicks: 743 },
-  { id: "5", name: "Phone Case", clicks: 621 },
-];
+import type { Product, User, SupportEmail } from "@shared/schema";
 
 export default function Dashboard() {
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const { data: emails = [] } = useQuery<SupportEmail[]>({
+    queryKey: ["/api/emails"],
+  });
+
+  const unreadEmails = emails.filter((email) => !email.isRead).length;
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -40,90 +31,44 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Products"
-          value="1,284"
+          value={products.length.toString()}
           icon={Package}
-          change="+12% from last month"
-          changeType="positive"
+          change={`${products.filter(p => p.isActive).length} active`}
+          changeType="neutral"
         />
         <StatCard
-          title="Active Users"
-          value="24"
+          title="Total Users"
+          value={users.length.toString()}
           icon={Users}
-          change="3 new this week"
-          changeType="positive"
+          change={`${users.filter(u => u.isActive).length} active`}
+          changeType="neutral"
         />
         <StatCard
           title="Unread Emails"
-          value="47"
+          value={unreadEmails.toString()}
           icon={Mail}
-          change="15 today"
+          change={`${emails.length} total`}
           changeType="neutral"
         />
         <StatCard
           title="Total Clicks"
-          value="15.2K"
+          value="0"
           icon={TrendingUp}
-          change="+8% from last week"
-          changeType="positive"
+          change="No data yet"
+          changeType="neutral"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Clicks by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={mockChartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="name"
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <YAxis
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "var(--radius)",
-                  }}
-                />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Clicked Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mockTopProducts.map((product, index) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between"
-                  data-testid={`item-top-product-${index}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center text-sm font-medium">
-                      {index + 1}
-                    </div>
-                    <p className="font-medium">{product.name}</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{product.clicks.toLocaleString()} clicks</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-muted-foreground">
+            Your dashboard will show analytics and insights once you add products and start tracking data.
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

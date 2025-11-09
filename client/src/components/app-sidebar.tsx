@@ -5,7 +5,7 @@ import {
   FolderTree,
   Mail,
   BarChart3,
-  Settings,
+  Tag,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +35,11 @@ const menuItems = [
     title: "Categories",
     url: "/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Brands",
+    url: "/brands",
+    icon: Tag,
   },
   {
     title: "Users",

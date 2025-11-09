@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Categories from "@/pages/categories";
+import Brands from "@/pages/brands";
 import Users from "@/pages/users";
 import Emails from "@/pages/emails";
 import Analytics from "@/pages/analytics";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/categories" component={Categories} />
+      <Route path="/brands" component={Brands} />
       <Route path="/users" component={Users} />
       <Route path="/emails" component={Emails} />
       <Route path="/analytics" component={Analytics} />

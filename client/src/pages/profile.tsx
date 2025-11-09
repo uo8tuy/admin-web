@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User, Briefcase, Mail, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import type { Role } from "@shared/schema";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -18,6 +18,16 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState(user?.firstName || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
+
+  const { data: roles = [] } = useQuery<Role[]>({
+    queryKey: ["/admin/roles"],
+  });
+
+  const getRoleName = (roleId: number | null) => {
+    if (!roleId) return "No role assigned";
+    const role = roles.find(r => r.id === roleId);
+    return role?.name || "Unknown role";
+  };
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { firstName: string; lastName: string }) => {
@@ -67,12 +77,6 @@ export default function Profile() {
     );
   }
 
-  const getInitials = () => {
-    const first = user.firstName?.[0] || "";
-    const last = user.lastName?.[0] || "";
-    return (first + last).toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
-  };
-
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -88,19 +92,13 @@ export default function Profile() {
             <CardTitle>Personal Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20" data-testid="avatar-profile">
-                <AvatarImage src={user.profileImageUrl || undefined} alt={`${user.firstName} ${user.lastName}`} />
-                <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg" data-testid="text-full-name">
-                  {user.firstName} {user.lastName}
-                </h3>
-                <p className="text-sm text-muted-foreground" data-testid="text-email">
-                  {user.email}
-                </p>
-              </div>
+            <div>
+              <h3 className="font-semibold text-lg" data-testid="text-full-name">
+                {user.firstName} {user.lastName}
+              </h3>
+              <p className="text-sm text-muted-foreground" data-testid="text-email">
+                {user.email}
+              </p>
             </div>
 
             {isEditing ? (
@@ -174,7 +172,7 @@ export default function Profile() {
               <div className="flex items-center gap-3">
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium" data-testid="text-user-role">
-                  {user.roleId ? `Role ID: ${user.roleId}` : "No role assigned"}
+                  {getRoleName(user.roleId)}
                 </span>
               </div>
             </div>

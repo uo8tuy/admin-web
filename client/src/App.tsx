@@ -16,6 +16,7 @@ import Users from "@/pages/users";
 import Roles from "@/pages/roles";
 import Emails from "@/pages/emails";
 import Analytics from "@/pages/analytics";
+import Profile from "@/pages/profile";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/roles" component={Roles} />
       <Route path="/emails" component={Emails} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );

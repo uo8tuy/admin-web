@@ -47,6 +47,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/admin/users/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Only allow users to update their own profile
+      if (id !== userId) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+
+      const { firstName, lastName } = req.body;
+      const user = await storage.upsertUser({
+        id,
+        firstName,
+        lastName,
+      });
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   app.patch('/admin/users/:id/role', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;

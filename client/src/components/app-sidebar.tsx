@@ -8,6 +8,7 @@ import {
   Tag,
   Shield,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -64,6 +65,11 @@ const menuItems = [
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Profile",
+    url: "/profile",
+    icon: UserCircle,
   },
 ];
 

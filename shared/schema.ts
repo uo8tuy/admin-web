@@ -14,6 +14,17 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// Roles table - stores all system roles
+export const roles = pgTable("roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  level: integer("level").notNull(),
+  permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
+  isSystem: boolean("is_system").notNull().default(true),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // User storage table for Replit Auth
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -21,9 +32,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: text("role").notNull().default("viewer"),
-  roleLevel: integer("role_level").notNull().default(10),
-  permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
+  roleId: varchar("role_id").references(() => roles.id),
   brandIds: text("brand_ids").array().default(sql`ARRAY[]::text[]`),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -97,6 +106,11 @@ export const userInvitations = pgTable("user_invitations", {
   acceptedAt: timestamp("accepted_at"),
 });
 
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -133,6 +147,8 @@ export const insertUserInvitationSchema = createInsertSchema(userInvitations).om
   acceptedAt: true,
 });
 
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Role = typeof roles.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;

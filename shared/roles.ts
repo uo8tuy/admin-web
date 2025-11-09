@@ -36,9 +36,9 @@ export const PERMISSION_DESCRIPTIONS = {
     description: "View category listings (read-only)",
     category: "Content Management",
   },
-  manage_brands: {
-    name: "Manage Brands",
-    description: "Create, edit, delete, and activate/deactivate brands",
+  manage_companies: {
+    name: "Manage Companies",
+    description: "Create, edit, delete, and activate/deactivate company information",
     category: "Content Management",
   },
   view_analytics: {
@@ -125,7 +125,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, readonly PermissionKey[]> = {
     "manage_roles",
     "manage_products",
     "manage_categories",
-    "manage_brands",
+    "manage_companies",
     "view_analytics",
     "manage_emails",
     "all_access",
@@ -134,7 +134,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, readonly PermissionKey[]> = {
     "manage_users",
     "manage_products",
     "manage_categories",
-    "manage_brands",
+    "manage_companies",
     "view_analytics",
     "manage_emails",
   ],

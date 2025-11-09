@@ -5,7 +5,7 @@ import { Edit, Trash2, FolderTree } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface CategoryItemProps {
-  id: string;
+  id: number;
   name: string;
   isActive: boolean;
   productCount?: number;

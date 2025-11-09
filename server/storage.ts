@@ -5,8 +5,8 @@ import {
   type InsertProduct,
   type Category,
   type InsertCategory,
-  type Brand,
-  type InsertBrand,
+  type CompanyInfo,
+  type InsertCompanyInfo,
   type SupportEmail,
   type InsertSupportEmail,
   type ProductClick,
@@ -17,7 +17,7 @@ import {
   users,
   products,
   categories,
-  brands,
+  companyInfos,
   supportEmails,
   productClicks,
   userInvitations,
@@ -32,8 +32,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined>;
-  createInvitedUser(email: string, roleId: number, brandIds?: number[]): Promise<User>;
+  updateUserRole(id: string, roleId: number, companyIds?: number[]): Promise<User | undefined>;
+  createInvitedUser(email: string, roleId: number, companyIds?: number[]): Promise<User>;
   deletePendingUser(email: string): Promise<void>;
   
   getProducts(): Promise<Product[]>;
@@ -48,8 +48,10 @@ export interface IStorage {
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: number): Promise<boolean>;
   
-  getBrands(): Promise<Brand[]>;
-  createBrand(brand: InsertBrand): Promise<Brand>;
+  getCompanyInfos(): Promise<CompanyInfo[]>;
+  createCompanyInfo(companyInfo: InsertCompanyInfo): Promise<CompanyInfo>;
+  updateCompanyInfo(id: number, companyInfo: Partial<InsertCompanyInfo>): Promise<CompanyInfo | undefined>;
+  deleteCompanyInfo(id: number): Promise<boolean>;
   
   getSupportEmails(): Promise<SupportEmail[]>;
   createSupportEmail(email: InsertSupportEmail): Promise<SupportEmail>;
@@ -76,10 +78,10 @@ export class MemStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-  async updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined> {
+  async updateUserRole(id: string, roleId: number, companyIds?: number[]): Promise<User | undefined> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-  async createInvitedUser(email: string, roleId: number, brandIds?: number[]): Promise<User> {
+  async createInvitedUser(email: string, roleId: number, companyIds?: number[]): Promise<User> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
   async deletePendingUser(email: string): Promise<void> {
@@ -115,10 +117,16 @@ export class MemStorage implements IStorage {
   async deleteCategory(id: number): Promise<boolean> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-  async getBrands(): Promise<Brand[]> {
+  async getCompanyInfos(): Promise<CompanyInfo[]> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
-  async createBrand(brand: InsertBrand): Promise<Brand> {
+  async createCompanyInfo(companyInfo: InsertCompanyInfo): Promise<CompanyInfo> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
+  async updateCompanyInfo(id: number, companyInfo: Partial<InsertCompanyInfo>): Promise<CompanyInfo | undefined> {
+    throw new Error("MemStorage not implemented - use DatabaseStorage");
+  }
+  async deleteCompanyInfo(id: number): Promise<boolean> {
     throw new Error("MemStorage not implemented - use DatabaseStorage");
   }
   async getSupportEmails(): Promise<SupportEmail[]> {
@@ -174,12 +182,12 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async updateUserRole(id: string, roleId: number, brandIds?: number[]): Promise<User | undefined> {
+  async updateUserRole(id: string, roleId: number, companyIds?: number[]): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set({
         roleId,
-        brandIds: brandIds || [],
+        companyIds: companyIds || [],
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
@@ -187,7 +195,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createInvitedUser(email: string, roleId: number, brandIds?: number[]): Promise<User> {
+  async createInvitedUser(email: string, roleId: number, companyIds?: number[]): Promise<User> {
     const tempId = `pending_${email}`;
     const [user] = await db
       .insert(users)
@@ -195,7 +203,7 @@ export class DatabaseStorage implements IStorage {
         id: tempId,
         email,
         roleId,
-        brandIds: brandIds || [],
+        companyIds: companyIds || [],
         verificationStatus: "pending",
         isActive: false, // Inactive until they verify
       })
@@ -265,13 +273,27 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
-  async getBrands(): Promise<Brand[]> {
-    return await db.select().from(brands);
+  async getCompanyInfos(): Promise<CompanyInfo[]> {
+    return await db.select().from(companyInfos);
   }
 
-  async createBrand(brandData: InsertBrand): Promise<Brand> {
-    const [brand] = await db.insert(brands).values(brandData).returning();
-    return brand;
+  async createCompanyInfo(companyData: InsertCompanyInfo): Promise<CompanyInfo> {
+    const [company] = await db.insert(companyInfos).values(companyData).returning();
+    return company;
+  }
+
+  async updateCompanyInfo(id: number, updates: Partial<InsertCompanyInfo>): Promise<CompanyInfo | undefined> {
+    const [company] = await db
+      .update(companyInfos)
+      .set(updates)
+      .where(eq(companyInfos.id, id))
+      .returning();
+    return company;
+  }
+
+  async deleteCompanyInfo(id: number): Promise<boolean> {
+    const result = await db.delete(companyInfos).where(eq(companyInfos.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getSupportEmails(): Promise<SupportEmail[]> {

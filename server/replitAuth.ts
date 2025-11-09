@@ -63,7 +63,7 @@ async function upsertUser(
     // Delete the pending record first
     await storage.deletePendingUser(email);
     
-    // Create verified user with Replit Auth data, keeping the assigned role/brands
+    // Create verified user with Replit Auth data, keeping the assigned role/companies
     await storage.upsertUser({
       id: replitAuthId,
       email,
@@ -71,7 +71,7 @@ async function upsertUser(
       lastName: claims["last_name"],
       profileImageUrl: claims["profile_image_url"],
       roleId: existingUser.roleId, // Keep assigned role
-      brandIds: existingUser.brandIds, // Keep assigned brands
+      companyIds: existingUser.companyIds, // Keep assigned companies
       verificationStatus: "verified",
       isActive: true,
     });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Product, Category, Brand } from "@shared/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertProductSchema, type Product, type Category, type CompanyInfo } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 export default function Products() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<number | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
 
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/admin/products"],
@@ -27,13 +51,13 @@ export default function Products() {
     queryKey: ["/admin/categories"],
   });
 
-  const { data: brands = [] } = useQuery<Brand[]>({
-    queryKey: ["/admin/brands"],
+  const { data: companies = [] } = useQuery<CompanyInfo[]>({
+    queryKey: ["/admin/company-infos"],
   });
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || product.categoryId === Number(selectedCategory);
     const matchesStatus = 
       selectedStatus === "all" ||
       (selectedStatus === "active" && product.isActive) ||
@@ -42,15 +66,142 @@ export default function Products() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const getCategoryName = (categoryId: string) => {
+  const getCategoryName = (categoryId: number) => {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || "Unknown";
   };
 
-  const getBrandName = (brandId: string | null) => {
-    if (!brandId) return undefined;
-    const brand = brands.find(b => b.id === brandId);
-    return brand?.name;
+  const getCompanyName = (companyId: number | null) => {
+    if (!companyId) return undefined;
+    const company = companies.find(c => c.id === companyId);
+    return company?.name;
+  };
+
+  const formSchema = insertProductSchema.extend({
+    categoryId: z.number({ required_error: "Category is required" }),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      categoryId: undefined,
+      companyId: null,
+      isActive: true,
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      return await apiRequest("POST", "/admin/products", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/admin/products"] });
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+      });
+      setDialogOpen(false);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create product",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      if (!editingProduct) throw new Error("No product selected");
+      return await apiRequest("PATCH", `/admin/products/${editingProduct.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/admin/products"] });
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
+      setDialogOpen(false);
+      setEditingProduct(null);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update product",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/admin/products/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/admin/products"] });
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (product: Product) => {
+      return await apiRequest("PATCH", `/admin/products/${product.id}`, {
+        isActive: !product.isActive,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/admin/products"] });
+      toast({
+        title: "Success",
+        description: "Product status updated",
+      });
+    },
+  });
+
+  const handleOpenDialog = (product?: Product) => {
+    if (product) {
+      setEditingProduct(product);
+      form.reset({
+        name: product.name,
+        description: product.description || "",
+        categoryId: product.categoryId,
+        companyId: product.companyId,
+        isActive: product.isActive,
+      });
+    } else {
+      setEditingProduct(null);
+      form.reset({
+        name: "",
+        description: "",
+        categoryId: undefined,
+        companyId: null,
+        isActive: true,
+      });
+    }
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = (data: z.infer<typeof formSchema>) => {
+    if (editingProduct) {
+      updateMutation.mutate(data);
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   if (productsLoading) {
@@ -70,7 +221,7 @@ export default function Products() {
             Manage your product catalog
           </p>
         </div>
-        <Button data-testid="button-add-product">
+        <Button onClick={() => handleOpenDialog()} data-testid="button-add-product">
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
@@ -87,14 +238,14 @@ export default function Products() {
             data-testid="input-search"
           />
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={String(selectedCategory)} onValueChange={(value) => setSelectedCategory(value === "all" ? "all" : Number(value))}>
           <SelectTrigger className="w-[180px]" data-testid="select-category">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
+              <SelectItem key={category.id} value={String(category.id)}>
                 {category.name}
               </SelectItem>
             ))}
@@ -150,15 +301,135 @@ export default function Products() {
               id={product.id}
               name={product.name}
               category={getCategoryName(product.categoryId)}
-              brand={getBrandName(product.brandId)}
+              company={getCompanyName(product.companyId)}
               isActive={product.isActive}
-              onEdit={() => console.log("Edit", product.id)}
-              onDelete={() => console.log("Delete", product.id)}
-              onToggleStatus={() => console.log("Toggle", product.id)}
+              onEdit={() => handleOpenDialog(product)}
+              onDelete={() => deleteMutation.mutate(product.id)}
+              onToggleStatus={() => toggleStatusMutation.mutate(product)}
             />
           ))}
         </div>
       )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent data-testid="dialog-product-form">
+          <DialogHeader>
+            <DialogTitle data-testid="text-dialog-title">
+              {editingProduct ? "Edit Product" : "Add Product"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingProduct ? "Update product information" : "Create a new product"}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Product name" data-testid="input-product-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        value={field.value || ""} 
+                        placeholder="Product description" 
+                        data-testid="input-product-description" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(Number(value))} 
+                      value={field.value ? String(field.value) : undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-product-category">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={String(category.id)}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company (Optional)</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))} 
+                      value={field.value ? String(field.value) : "none"}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-product-company">
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {companies.map((company) => (
+                          <SelectItem key={company.id} value={String(company.id)}>
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  data-testid="button-cancel"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-submit-product"
+                >
+                  {editingProduct ? "Update" : "Create"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

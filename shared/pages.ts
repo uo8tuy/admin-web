@@ -19,9 +19,9 @@ export const ADMIN_PAGES = [
     category: "Content",
   },
   {
-    path: "/brands",
-    name: "Brands",
-    description: "Manage brands",
+    path: "/company-infos",
+    name: "Company Infos",
+    description: "Manage company information",
     category: "Content",
   },
   {

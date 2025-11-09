@@ -34,7 +34,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   roleId: bigint("role_id", { mode: "number" }).references(() => roles.id),
-  brandIds: bigint("brand_ids", { mode: "number" }).array().default(sql`ARRAY[]::bigint[]`),
+  companyIds: bigint("company_ids", { mode: "number" }).array().default(sql`ARRAY[]::bigint[]`),
   verificationStatus: varchar("verification_status").notNull().default("pending"), // "pending" | "verified"
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -48,10 +48,16 @@ export const categories = pgTable("categories", {
   parentId: bigint("parent_id", { mode: "number" }),
 });
 
-export const brands = pgTable("brands", {
+export const companyInfos = pgTable("company_infos", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
+  foundedDate: text("founded_date"),
+  logo: text("logo"),
+  founder: text("founder"),
+  location: text("location"),
+  contactInfo: jsonb("contact_info"), // { email, phone, website, facebook, instagram, twitter, linkedin, youtube }
   isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const products = pgTable("products", {
@@ -60,7 +66,7 @@ export const products = pgTable("products", {
   description: text("description").notNull(),
   performance: text("performance"),
   categoryId: bigint("category_id", { mode: "number" }).notNull(),
-  brandId: bigint("brand_id", { mode: "number" }),
+  companyId: bigint("company_id", { mode: "number" }),
   mainImage: text("main_image"),
   additionalImages: text("additional_images").array().default(sql`ARRAY[]::text[]`),
   isActive: boolean("is_active").notNull().default(true),
@@ -99,7 +105,7 @@ export const userInvitations = pgTable("user_invitations", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   email: varchar("email").notNull().unique(),
   roleId: bigint("role_id", { mode: "number" }).notNull().references(() => roles.id),
-  brandIds: bigint("brand_ids", { mode: "number" }).array().default(sql`ARRAY[]::bigint[]`),
+  companyIds: bigint("company_ids", { mode: "number" }).array().default(sql`ARRAY[]::bigint[]`),
   inviterId: varchar("inviter_id").notNull(), // References users.id (varchar)
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -120,8 +126,9 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
 });
 
-export const insertBrandSchema = createInsertSchema(brands).omit({
+export const insertCompanyInfoSchema = createInsertSchema(companyInfos).omit({
   id: true,
+  createdAt: true,
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({
@@ -153,8 +160,8 @@ export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
-export type InsertBrand = z.infer<typeof insertBrandSchema>;
-export type Brand = typeof brands.$inferSelect;
+export type InsertCompanyInfo = z.infer<typeof insertCompanyInfoSchema>;
+export type CompanyInfo = typeof companyInfos.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProductClick = { productId: number };

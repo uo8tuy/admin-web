@@ -13,7 +13,7 @@ interface ProductCardProps {
   id: string;
   name: string;
   category: string;
-  brand?: string;
+  company?: string;
   isActive: boolean;
   imageUrl?: string;
   onEdit?: () => void;
@@ -25,7 +25,7 @@ export function ProductCard({
   id,
   name,
   category,
-  brand,
+  company,
   isActive,
   imageUrl,
   onEdit,
@@ -56,7 +56,7 @@ export function ProductCard({
         <h3 className="font-medium mb-1" data-testid={`text-name-${id}`}>{name}</h3>
         <div className="flex gap-2 flex-wrap">
           <Badge variant="outline" data-testid={`badge-category-${id}`}>{category}</Badge>
-          {brand && <Badge variant="outline" data-testid={`badge-brand-${id}`}>{brand}</Badge>}
+          {company && <Badge variant="outline" data-testid={`badge-company-${id}`}>{company}</Badge>}
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-end">

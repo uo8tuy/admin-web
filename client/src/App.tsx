@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Categories from "@/pages/categories";
-import Brands from "@/pages/brands";
+import CompanyInfos from "@/pages/company-infos";
 import Users from "@/pages/users";
 import Roles from "@/pages/roles";
 import Emails from "@/pages/emails";
@@ -45,7 +45,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/categories" component={Categories} />
-      <Route path="/brands" component={Brands} />
+      <Route path="/company-infos" component={CompanyInfos} />
       <Route path="/users" component={Users} />
       <Route path="/roles" component={Roles} />
       <Route path="/emails" component={Emails} />

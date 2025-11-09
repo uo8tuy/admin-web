@@ -5,7 +5,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
   insertProductSchema,
   insertCategorySchema,
-  insertBrandSchema,
+  insertCompanyInfoSchema,
   insertSupportEmailSchema,
 } from "@shared/schema";
 import { canManageUserByRoleId, getAssignableRolesByRoleId } from "@shared/roles";
@@ -131,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      const { roleId, brandIds } = req.body;
+      const { roleId, companyIds } = req.body;
       
       // Get target user
       const targetUser = await storage.getUser(id);
@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden: Cannot assign this role" });
       }
 
-      const user = await storage.updateUserRole(id, roleId, brandIds);
+      const user = await storage.updateUserRole(id, roleId, companyIds);
       res.json(user);
     } catch (error) {
       console.error("Error updating user role:", error);
@@ -167,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden: No role assigned" });
       }
 
-      const { email, roleId, brandIds } = req.body;
+      const { email, roleId, companyIds } = req.body;
       
       if (!email || !roleId) {
         return res.status(400).json({ message: "Email and role are required" });
@@ -186,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create pending user
-      const user = await storage.createInvitedUser(email, roleId, brandIds);
+      const user = await storage.createInvitedUser(email, roleId, companyIds);
       
       // TODO: Send invitation email here
       
@@ -211,10 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let products = await storage.getProducts();
       
-      // Filter by brand if user has brand restrictions
-      if (currentUser.brandIds && currentUser.brandIds.length > 0) {
+      // Filter by company if user has company restrictions
+      if (currentUser.companyIds && currentUser.companyIds.length > 0) {
         products = products.filter(p => 
-          p.brandId && currentUser.brandIds?.includes(p.brandId)
+          p.companyId && currentUser.companyIds?.includes(p.companyId)
         );
       }
       
@@ -249,10 +249,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertProductSchema.parse(req.body);
       
-      // Check if user can manage this brand
-      if (currentUser.brandIds && currentUser.brandIds.length > 0) {
-        if (!validatedData.brandId || !currentUser.brandIds.includes(validatedData.brandId)) {
-          return res.status(403).json({ message: "You can only create products for your assigned brands" });
+      // Check if user can manage this company
+      if (currentUser.companyIds && currentUser.companyIds.length > 0) {
+        if (!validatedData.companyId || !currentUser.companyIds.includes(validatedData.companyId)) {
+          return res.status(403).json({ message: "You can only create products for your assigned companies" });
         }
       }
       
@@ -282,10 +282,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      // Check if user can manage this brand
-      if (currentUser.brandIds && currentUser.brandIds.length > 0) {
-        if (!existingProduct.brandId || !currentUser.brandIds.includes(existingProduct.brandId)) {
-          return res.status(403).json({ message: "You can only edit products from your assigned brands" });
+      // Check if user can manage this company
+      if (currentUser.companyIds && currentUser.companyIds.length > 0) {
+        if (!existingProduct.companyId || !currentUser.companyIds.includes(existingProduct.companyId)) {
+          return res.status(403).json({ message: "You can only edit products from your assigned companies" });
         }
       }
       
@@ -360,27 +360,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/admin/brands', isAuthenticated, async (req, res) => {
+  app.get('/admin/company-infos', isAuthenticated, async (req, res) => {
     try {
-      const brands = await storage.getBrands();
-      res.json(brands);
+      const companies = await storage.getCompanyInfos();
+      res.json(companies);
     } catch (error) {
-      console.error("Error fetching brands:", error);
-      res.status(500).json({ message: "Failed to fetch brands" });
+      console.error("Error fetching company infos:", error);
+      res.status(500).json({ message: "Failed to fetch company infos" });
     }
   });
 
-  app.post('/admin/brands', isAuthenticated, async (req, res) => {
+  app.post('/admin/company-infos', isAuthenticated, async (req, res) => {
     try {
-      const validatedData = insertBrandSchema.parse(req.body);
-      const brand = await storage.createBrand(validatedData);
-      res.status(201).json(brand);
+      const validatedData = insertCompanyInfoSchema.parse(req.body);
+      const company = await storage.createCompanyInfo(validatedData);
+      res.status(201).json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid brand data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid company info data", errors: error.errors });
       }
-      console.error("Error creating brand:", error);
-      res.status(500).json({ message: "Failed to create brand" });
+      console.error("Error creating company info:", error);
+      res.status(500).json({ message: "Failed to create company info" });
+    }
+  });
+
+  app.patch('/admin/company-infos/:id', isAuthenticated, async (req, res) => {
+    try {
+      const company = await storage.updateCompanyInfo(parseInt(req.params.id), req.body);
+      if (!company) {
+        return res.status(404).json({ message: "Company info not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      console.error("Error updating company info:", error);
+      res.status(500).json({ message: "Failed to update company info" });
+    }
+  });
+
+  app.delete('/admin/company-infos/:id', isAuthenticated, async (req, res) => {
+    try {
+      const success = await storage.deleteCompanyInfo(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ message: "Company info not found" });
+      }
+      res.json({ message: "Company info deleted" });
+    } catch (error) {
+      console.error("Error deleting company info:", error);
+      res.status(500).json({ message: "Failed to delete company info" });
     }
   });
 

@@ -45,8 +45,8 @@ const menuItems = [
     icon: FolderTree,
   },
   {
-    title: "Brands",
-    url: "/brands",
+    title: "Company Infos",
+    url: "/company-infos",
     icon: Tag,
   },
   {

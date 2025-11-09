@@ -10,7 +10,7 @@ export default function Brands() {
   const [searchQuery, setSearchQuery] = useState("");
   
   const { data: brands = [], isLoading } = useQuery<Brand[]>({
-    queryKey: ["/api/brands"],
+    queryKey: ["/admin/brands"],
   });
 
   const filteredBrands = brands.filter((brand) =>

@@ -13,7 +13,7 @@ import { z } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
-  app.get('/api/auth/user', async (req: any, res) => {
+  app.get('/admin/auth/user', async (req: any, res) => {
     try {
       if (!req.isAuthenticated() || !req.user?.claims?.sub) {
         return res.json(null);
@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/users', isAuthenticated, async (req, res) => {
+  app.get('/admin/users', isAuthenticated, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/users/:id/role', isAuthenticated, async (req, res) => {
+  app.patch('/admin/users/:id/role', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { role, roleLevel, permissions, brandIds } = req.body;
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/products', isAuthenticated, async (req: any, res) => {
+  app.get('/admin/products', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const currentUser = await storage.getUser(userId);
@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/products/:id', isAuthenticated, async (req, res) => {
+  app.get('/admin/products/:id', isAuthenticated, async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.id);
       if (!product) {
@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/products', isAuthenticated, async (req: any, res) => {
+  app.post('/admin/products', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const currentUser = await storage.getUser(userId);
@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/products/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/admin/products/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const currentUser = await storage.getUser(userId);
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/products/:id', isAuthenticated, async (req, res) => {
+  app.delete('/admin/products/:id', isAuthenticated, async (req, res) => {
     try {
       const success = await storage.deleteProduct(req.params.id);
       if (!success) {
@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/categories', isAuthenticated, async (req, res) => {
+  app.get('/admin/categories', isAuthenticated, async (req, res) => {
     try {
       const categories = await storage.getCategories();
       res.json(categories);
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/categories', isAuthenticated, async (req, res) => {
+  app.post('/admin/categories', isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory(validatedData);
@@ -185,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/categories/:id', isAuthenticated, async (req, res) => {
+  app.patch('/admin/categories/:id', isAuthenticated, async (req, res) => {
     try {
       const category = await storage.updateCategory(req.params.id, req.body);
       if (!category) {
@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/categories/:id', isAuthenticated, async (req, res) => {
+  app.delete('/admin/categories/:id', isAuthenticated, async (req, res) => {
     try {
       const success = await storage.deleteCategory(req.params.id);
       if (!success) {
@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/brands', isAuthenticated, async (req, res) => {
+  app.get('/admin/brands', isAuthenticated, async (req, res) => {
     try {
       const brands = await storage.getBrands();
       res.json(brands);
@@ -221,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/brands', isAuthenticated, async (req, res) => {
+  app.post('/admin/brands', isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertBrandSchema.parse(req.body);
       const brand = await storage.createBrand(validatedData);
@@ -235,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/emails', isAuthenticated, async (req, res) => {
+  app.get('/admin/emails', isAuthenticated, async (req, res) => {
     try {
       const emails = await storage.getSupportEmails();
       res.json(emails);
@@ -245,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/emails', isAuthenticated, async (req, res) => {
+  app.post('/admin/emails', isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertSupportEmailSchema.parse(req.body);
       const email = await storage.createSupportEmail(validatedData);
@@ -259,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/emails/:id/read', isAuthenticated, async (req, res) => {
+  app.patch('/admin/emails/:id/read', isAuthenticated, async (req, res) => {
     try {
       const success = await storage.markEmailAsRead(req.params.id);
       if (!success) {
@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/analytics/click', isAuthenticated, async (req, res) => {
+  app.post('/admin/analytics/click', isAuthenticated, async (req, res) => {
     try {
       const schema = z.object({ productId: z.string() });
       const validatedData = schema.parse(req.body);

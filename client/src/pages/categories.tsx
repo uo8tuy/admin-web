@@ -10,7 +10,7 @@ export default function Categories() {
   const [searchQuery, setSearchQuery] = useState("");
   
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: ["/admin/categories"],
   });
 
   const filteredCategories = categories.filter((category) =>

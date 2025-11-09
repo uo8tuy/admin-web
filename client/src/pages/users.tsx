@@ -22,7 +22,7 @@ export default function Users() {
   const { user: currentUser } = useAuth();
   
   const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/admin/users"],
   });
 
   const filteredUsers = users.filter((user) =>

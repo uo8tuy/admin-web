@@ -20,15 +20,15 @@ export default function Products() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+    queryKey: ["/admin/products"],
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: ["/admin/categories"],
   });
 
   const { data: brands = [] } = useQuery<Brand[]>({
-    queryKey: ["/api/brands"],
+    queryKey: ["/admin/brands"],
   });
 
   const filteredProducts = products.filter((product) => {

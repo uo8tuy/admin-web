@@ -6,15 +6,15 @@ import type { Product, User, SupportEmail } from "@shared/schema";
 
 export default function Dashboard() {
   const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+    queryKey: ["/admin/products"],
   });
 
   const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/admin/users"],
   });
 
   const { data: emails = [] } = useQuery<SupportEmail[]>({
-    queryKey: ["/api/emails"],
+    queryKey: ["/admin/emails"],
   });
 
   const unreadEmails = emails.filter((email) => !email.isRead).length;

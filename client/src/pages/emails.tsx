@@ -18,7 +18,7 @@ export default function Emails() {
   const [filter, setFilter] = useState<string>("all");
   
   const { data: emails = [], isLoading } = useQuery<SupportEmail[]>({
-    queryKey: ["/api/emails"],
+    queryKey: ["/admin/emails"],
   });
 
   const filteredEmails = emails.filter((email) => {

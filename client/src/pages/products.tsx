@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,53 +11,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const mockProducts = [
-  {
-    id: "1",
-    name: "Wireless Headphones",
-    category: "Electronics",
-    brand: "AudioTech",
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "Smart Watch",
-    category: "Electronics",
-    brand: "TechWear",
-    isActive: true,
-  },
-  {
-    id: "3",
-    name: "Running Shoes",
-    category: "Sports",
-    brand: "SportFit",
-    isActive: false,
-  },
-  {
-    id: "4",
-    name: "Laptop Stand",
-    category: "Home",
-    isActive: true,
-  },
-  {
-    id: "5",
-    name: "Coffee Maker",
-    category: "Home",
-    brand: "BrewMaster",
-    isActive: true,
-  },
-  {
-    id: "6",
-    name: "Yoga Mat",
-    category: "Sports",
-    brand: "FitLife",
-    isActive: true,
-  },
-];
+import type { Product, Category, Brand } from "@shared/schema";
 
 export default function Products() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const { data: brands = [] } = useQuery<Brand[]>({
+    queryKey: ["/api/brands"],
+  });
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory;
+    const matchesStatus = 
+      selectedStatus === "all" ||
+      (selectedStatus === "active" && product.isActive) ||
+      (selectedStatus === "inactive" && !product.isActive);
+    
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || "Unknown";
+  };
+
+  const getBrandName = (brandId: string | null) => {
+    if (!brandId) return undefined;
+    const brand = brands.find(b => b.id === brandId);
+    return brand?.name;
+  };
+
+  if (productsLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-muted-foreground">Loading products...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -79,21 +82,25 @@ export default function Products() {
           <Input
             placeholder="Search products..."
             className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             data-testid="input-search"
           />
         </div>
-        <Select defaultValue="all">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-[180px]" data-testid="select-category">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="electronics">Electronics</SelectItem>
-            <SelectItem value="sports">Sports</SelectItem>
-            <SelectItem value="home">Home</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        <Select defaultValue="all">
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
           <SelectTrigger className="w-[180px]" data-testid="select-status">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -123,23 +130,35 @@ export default function Products() {
         </div>
       </div>
 
-      <div
-        className={
-          viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            : "space-y-4"
-        }
-      >
-        {mockProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            {...product}
-            onEdit={() => console.log("Edit", product.id)}
-            onDelete={() => console.log("Delete", product.id)}
-            onToggleStatus={() => console.log("Toggle", product.id)}
-          />
-        ))}
-      </div>
+      {filteredProducts.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {products.length === 0 
+            ? "No products yet. Click 'Add Product' to create one."
+            : "No products match your filters."}
+        </div>
+      ) : (
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              : "space-y-4"
+          }
+        >
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              category={getCategoryName(product.categoryId)}
+              brand={getBrandName(product.brandId)}
+              isActive={product.isActive}
+              onEdit={() => console.log("Edit", product.id)}
+              onDelete={() => console.log("Delete", product.id)}
+              onToggleStatus={() => console.log("Toggle", product.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

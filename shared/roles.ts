@@ -7,7 +7,8 @@ export const PERMISSION_DESCRIPTIONS = {
   },
   manage_users: {
     name: "Manage Users",
-    description: "Create, edit, and deactivate admin users with lower role levels",
+    description:
+      "Create, edit, and deactivate admin users with lower role levels",
     category: "User Management",
   },
   manage_roles: {
@@ -71,47 +72,47 @@ export type PermissionKey = keyof typeof PERMISSION_DESCRIPTIONS;
 
 // Role hierarchy with numeric levels (higher = more powerful)
 export const ROLES = {
-  SUPER_ADMIN: { 
-    name: "Super Admin", 
+  SUPER_ADMIN: {
+    name: "Super Admin",
     level: 100,
     isSystem: true,
-    description: "Full system administrator with all permissions"
+    description: "Full system administrator with all permissions",
   },
-  ADMIN: { 
-    name: "Admin", 
+  ADMIN: {
+    name: "Admin",
     level: 80,
     isSystem: true,
-    description: "Administrator who can manage most aspects of the system"
+    description: "Administrator who can manage most aspects of the system",
   },
-  CATEGORY_MANAGER: { 
-    name: "Category Manager", 
+  CATEGORY_MANAGER: {
+    name: "Category Manager",
     level: 60,
     isSystem: true,
-    description: "Manages product categories and related products"
+    description: "Manages product categories and related products",
   },
-  PRODUCT_MANAGER: { 
-    name: "Product Manager", 
+  PRODUCT_MANAGER: {
+    name: "Product Manager",
     level: 50,
     isSystem: true,
-    description: "Manages product catalog and inventory"
+    description: "Manages product catalog and inventory",
   },
-  SUPPORT_MANAGER: { 
-    name: "Support Manager", 
+  SUPPORT_MANAGER: {
+    name: "Support Manager",
     level: 40,
     isSystem: true,
-    description: "Manages customer support team and emails"
+    description: "Manages customer support team and emails",
   },
-  SUPPORT_STAFF: { 
-    name: "Support Staff", 
+  SUPPORT_STAFF: {
+    name: "Support Staff",
     level: 20,
     isSystem: true,
-    description: "Handles customer support inquiries"
+    description: "Handles customer support inquiries",
   },
-  VIEWER: { 
-    name: "Viewer", 
+  VIEWER: {
+    name: "Viewer",
     level: 10,
     isSystem: true,
-    description: "Read-only access to view content"
+    description: "Read-only access to view content",
   },
 } as const;
 
@@ -137,35 +138,16 @@ export const ROLE_PERMISSIONS: Record<RoleName, readonly PermissionKey[]> = {
     "view_analytics",
     "manage_emails",
   ],
-  CATEGORY_MANAGER: [
-    "manage_categories",
-    "manage_products",
-    "view_analytics",
-  ],
-  PRODUCT_MANAGER: [
-    "manage_products",
-    "view_products",
-    "view_analytics",
-  ],
-  SUPPORT_MANAGER: [
-    "manage_emails",
-    "view_emails",
-    "manage_support_staff",
-  ],
-  SUPPORT_STAFF: [
-    "view_emails",
-    "reply_emails",
-  ],
-  VIEWER: [
-    "view_products",
-    "view_categories",
-    "view_analytics",
-  ],
+  CATEGORY_MANAGER: ["manage_categories", "manage_products", "view_analytics"],
+  PRODUCT_MANAGER: ["manage_products", "view_products", "view_analytics"],
+  SUPPORT_MANAGER: ["manage_emails", "view_emails", "manage_support_staff"],
+  SUPPORT_STAFF: ["view_emails", "reply_emails"],
+  VIEWER: ["view_products", "view_categories", "view_analytics"],
 };
 
 // Helper function to get role level
 export function getRoleLevel(roleName: string): number {
-  const role = Object.values(ROLES).find(r => r.name === roleName);
+  const role = Object.values(ROLES).find((r) => r.name === roleName);
   return role?.level ?? 0;
 }
 
@@ -178,25 +160,28 @@ export function canManageUser(actorRole: string, targetRole: string): boolean {
 
 // Helper function to get all available roles
 export function getAllRoles() {
-  return Object.values(ROLES).map(r => r.name);
+  return Object.values(ROLES).map((r) => r.name);
 }
 
 // Helper function to get roles that a user can assign (only lower roles)
 export function getAssignableRoles(actorRole: string): string[] {
   const actorLevel = getRoleLevel(actorRole);
   return Object.values(ROLES)
-    .filter(r => r.level < actorLevel)
-    .map(r => r.name);
+    .filter((r) => r.level < actorLevel)
+    .map((r) => r.name);
 }
 
 // Helper function to check if user has permission
 export function hasPermission(roleName: string, permission: string): boolean {
   const roleKey = Object.keys(ROLES).find(
-    key => ROLES[key as RoleName].name === roleName
+    (key) => ROLES[key as RoleName].name === roleName,
   ) as RoleName | undefined;
-  
+
   if (!roleKey) return false;
-  
+
   const permissions = ROLE_PERMISSIONS[roleKey];
-  return permissions.includes(permission as any) || permissions.includes("all_access" as any);
+  return (
+    permissions.includes(permission as any) ||
+    permissions.includes("all_access" as any)
+  );
 }

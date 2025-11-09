@@ -40,8 +40,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/users/:id/role', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const { role, roleLevel, permissions } = req.body;
-      const user = await storage.updateUserRole(id, role, roleLevel, permissions);
+      const { role, roleLevel, permissions, brandIds } = req.body;
+      const user = await storage.updateUserRole(id, role, roleLevel, permissions, brandIds);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -52,9 +52,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/products', isAuthenticated, async (req, res) => {
+  app.get('/api/products', isAuthenticated, async (req: any, res) => {
     try {
-      const products = await storage.getProducts();
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      let products = await storage.getProducts();
+      
+      // Filter by brand if user has brand restrictions
+      if (currentUser.brandIds && currentUser.brandIds.length > 0) {
+        products = products.filter(p => 
+          p.brandId && currentUser.brandIds?.includes(p.brandId)
+        );
+      }
+      
       res.json(products);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -75,9 +90,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/products', isAuthenticated, async (req, res) => {
+  app.post('/api/products', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
       const validatedData = insertProductSchema.parse(req.body);
+      
+      // Check if user can manage this brand
+      if (currentUser.brandIds && currentUser.brandIds.length > 0) {
+        if (!validatedData.brandId || !currentUser.brandIds.includes(validatedData.brandId)) {
+          return res.status(403).json({ message: "You can only create products for your assigned brands" });
+        }
+      }
+      
       const product = await storage.createProduct(validatedData);
       res.status(201).json(product);
     } catch (error) {
@@ -89,12 +119,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/products/:id', isAuthenticated, async (req, res) => {
+  app.patch('/api/products/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const product = await storage.updateProduct(req.params.id, req.body);
-      if (!product) {
+      const userId = req.user.claims.sub;
+      const currentUser = await storage.getUser(userId);
+      
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const existingProduct = await storage.getProduct(req.params.id);
+      if (!existingProduct) {
         return res.status(404).json({ message: "Product not found" });
       }
+
+      // Check if user can manage this brand
+      if (currentUser.brandIds && currentUser.brandIds.length > 0) {
+        if (!existingProduct.brandId || !currentUser.brandIds.includes(existingProduct.brandId)) {
+          return res.status(403).json({ message: "You can only edit products from your assigned brands" });
+        }
+      }
+      
+      const product = await storage.updateProduct(req.params.id, req.body);
       res.json(product);
     } catch (error) {
       console.error("Error updating product:", error);

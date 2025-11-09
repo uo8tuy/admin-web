@@ -24,6 +24,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("viewer"),
   roleLevel: integer("role_level").notNull().default(10),
   permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
+  brandIds: text("brand_ids").array().default(sql`ARRAY[]::text[]`),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

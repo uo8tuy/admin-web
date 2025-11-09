@@ -26,7 +26,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  updateUserRole(id: string, role: string, roleLevel: number, permissions: string[]): Promise<User | undefined>;
+  updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined>;
   
   getProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -107,7 +107,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
-  async updateUserRole(id: string, role: string, roleLevel: number, permissions: string[]): Promise<User | undefined> {
+  async updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
     
@@ -116,6 +116,7 @@ export class MemStorage implements IStorage {
       role,
       roleLevel,
       permissions,
+      brandIds: brandIds || [],
       updatedAt: new Date(),
     };
     this.users.set(id, updated);
@@ -270,13 +271,14 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async updateUserRole(id: string, role: string, roleLevel: number, permissions: string[]): Promise<User | undefined> {
+  async updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set({
         role,
         roleLevel,
         permissions,
+        brandIds: brandIds || [],
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))

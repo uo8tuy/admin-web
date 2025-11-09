@@ -11,12 +11,15 @@ import {
   type InsertSupportEmail,
   type ProductClick,
   type InsertProductClick,
+  type UserInvitation,
+  type InsertUserInvitation,
   users,
   products,
   categories,
   brands,
   supportEmails,
   productClicks,
+  userInvitations,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -27,6 +30,10 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: string, role: string, roleLevel: number, permissions: string[], brandIds?: string[]): Promise<User | undefined>;
+  
+  createUserInvitation(email: string, role: string, inviterId: string): Promise<UserInvitation>;
+  getInvitationByEmail(email: string): Promise<UserInvitation | undefined>;
+  markInvitationAccepted(invitationId: string): Promise<boolean>;
   
   getProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;

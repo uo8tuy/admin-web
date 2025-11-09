@@ -84,6 +84,19 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const userInvitations = pgTable("user_invitations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull().unique(),
+  role: text("role").notNull(),
+  roleLevel: integer("role_level").notNull(),
+  permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
+  brandIds: text("brand_ids").array().default(sql`ARRAY[]::text[]`),
+  inviterId: varchar("inviter_id").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -113,6 +126,13 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   createdAt: true,
 });
 
+export const insertUserInvitationSchema = createInsertSchema(userInvitations).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+  acceptedAt: true,
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
@@ -123,6 +143,8 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProductClick = { productId: string };
 export type ProductClick = typeof productClicks.$inferSelect;
+export type InsertUserInvitation = z.infer<typeof insertUserInvitationSchema>;
+export type UserInvitation = typeof userInvitations.$inferSelect;
 export type InsertSupportEmail = z.infer<typeof insertSupportEmailSchema>;
 export type SupportEmail = typeof supportEmails.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

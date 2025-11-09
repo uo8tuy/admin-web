@@ -52,6 +52,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/admin/users/invite', isAuthenticated, async (req: any, res) => {
+    try {
+      const { email, role } = req.body;
+      
+      if (!email || !role) {
+        return res.status(400).json({ message: "Email and role are required" });
+      }
+
+      const userId = req.user.claims.sub;
+      
+      // Store the invitation - when user logs in with this email, they'll get this role
+      await storage.createUserInvitation(email, role, userId);
+      
+      res.json({ 
+        message: "User invited successfully",
+        email,
+        role,
+      });
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      res.status(500).json({ message: "Failed to invite user" });
+    }
+  });
+
   app.get('/admin/products', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

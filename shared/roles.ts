@@ -163,9 +163,18 @@ export function getAllRoles() {
   return Object.values(ROLES).map((r) => r.name);
 }
 
-// Helper function to get roles that a user can assign (only lower roles)
+// Helper function to get roles that a user can assign
+// Super Admin can assign all roles including Super Admin
+// Others can only assign roles lower than their own
 export function getAssignableRoles(actorRole: string): string[] {
   const actorLevel = getRoleLevel(actorRole);
+  
+  // Super Admin can assign all roles
+  if (actorLevel >= 100) {
+    return Object.values(ROLES).map((r) => r.name);
+  }
+  
+  // Others can only assign lower roles
   return Object.values(ROLES)
     .filter((r) => r.level < actorLevel)
     .map((r) => r.name);

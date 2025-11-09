@@ -21,8 +21,11 @@ export default function Landing() {
             size="lg"
             data-testid="button-login"
           >
-            Sign In with Replit
+            Sign In
           </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Sign in with Google, GitHub, Email, or other methods
+          </p>
         </CardContent>
       </Card>
     </div>

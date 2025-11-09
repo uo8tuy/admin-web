@@ -6,6 +6,7 @@ import {
   Mail,
   BarChart3,
   Tag,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +46,11 @@ const menuItems = [
     title: "Users",
     url: "/users",
     icon: Users,
+  },
+  {
+    title: "Roles & Permissions",
+    url: "/roles",
+    icon: Shield,
   },
   {
     title: "Support Emails",

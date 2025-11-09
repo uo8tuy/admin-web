@@ -12,6 +12,7 @@ import Products from "@/pages/products";
 import Categories from "@/pages/categories";
 import Brands from "@/pages/brands";
 import Users from "@/pages/users";
+import Roles from "@/pages/roles";
 import Emails from "@/pages/emails";
 import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/categories" component={Categories} />
       <Route path="/brands" component={Brands} />
       <Route path="/users" component={Users} />
+      <Route path="/roles" component={Roles} />
       <Route path="/emails" component={Emails} />
       <Route path="/analytics" component={Analytics} />
       <Route component={NotFound} />

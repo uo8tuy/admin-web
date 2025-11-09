@@ -1,18 +1,124 @@
+// Permission descriptions to help admins understand what each permission does
+export const PERMISSION_DESCRIPTIONS = {
+  all_access: {
+    name: "All Access",
+    description: "Complete system access - can perform any action",
+    category: "System",
+  },
+  manage_users: {
+    name: "Manage Users",
+    description: "Create, edit, and deactivate admin users with lower role levels",
+    category: "User Management",
+  },
+  manage_roles: {
+    name: "Manage Roles",
+    description: "Create and modify custom roles and their permissions",
+    category: "User Management",
+  },
+  manage_products: {
+    name: "Manage Products",
+    description: "Create, edit, delete, and activate/deactivate products",
+    category: "Content Management",
+  },
+  view_products: {
+    name: "View Products",
+    description: "View product listings and details (read-only)",
+    category: "Content Management",
+  },
+  manage_categories: {
+    name: "Manage Categories",
+    description: "Create, edit, delete, and activate/deactivate categories",
+    category: "Content Management",
+  },
+  view_categories: {
+    name: "View Categories",
+    description: "View category listings (read-only)",
+    category: "Content Management",
+  },
+  manage_brands: {
+    name: "Manage Brands",
+    description: "Create, edit, delete, and activate/deactivate brands",
+    category: "Content Management",
+  },
+  view_analytics: {
+    name: "View Analytics",
+    description: "Access analytics dashboard and view performance metrics",
+    category: "Analytics",
+  },
+  manage_emails: {
+    name: "Manage Emails",
+    description: "View, reply to, and manage all support emails",
+    category: "Support",
+  },
+  view_emails: {
+    name: "View Emails",
+    description: "View support emails (read-only)",
+    category: "Support",
+  },
+  reply_emails: {
+    name: "Reply to Emails",
+    description: "Send replies to support emails",
+    category: "Support",
+  },
+  manage_support_staff: {
+    name: "Manage Support Staff",
+    description: "Manage support team members and their assignments",
+    category: "Support",
+  },
+} as const;
+
+export type PermissionKey = keyof typeof PERMISSION_DESCRIPTIONS;
+
 // Role hierarchy with numeric levels (higher = more powerful)
 export const ROLES = {
-  SUPER_ADMIN: { name: "Super Admin", level: 100 },
-  ADMIN: { name: "Admin", level: 80 },
-  CATEGORY_MANAGER: { name: "Category Manager", level: 60 },
-  PRODUCT_MANAGER: { name: "Product Manager", level: 50 },
-  SUPPORT_MANAGER: { name: "Support Manager", level: 40 },
-  SUPPORT_STAFF: { name: "Support Staff", level: 20 },
-  VIEWER: { name: "Viewer", level: 10 },
+  SUPER_ADMIN: { 
+    name: "Super Admin", 
+    level: 100,
+    isSystem: true,
+    description: "Full system administrator with all permissions"
+  },
+  ADMIN: { 
+    name: "Admin", 
+    level: 80,
+    isSystem: true,
+    description: "Administrator who can manage most aspects of the system"
+  },
+  CATEGORY_MANAGER: { 
+    name: "Category Manager", 
+    level: 60,
+    isSystem: true,
+    description: "Manages product categories and related products"
+  },
+  PRODUCT_MANAGER: { 
+    name: "Product Manager", 
+    level: 50,
+    isSystem: true,
+    description: "Manages product catalog and inventory"
+  },
+  SUPPORT_MANAGER: { 
+    name: "Support Manager", 
+    level: 40,
+    isSystem: true,
+    description: "Manages customer support team and emails"
+  },
+  SUPPORT_STAFF: { 
+    name: "Support Staff", 
+    level: 20,
+    isSystem: true,
+    description: "Handles customer support inquiries"
+  },
+  VIEWER: { 
+    name: "Viewer", 
+    level: 10,
+    isSystem: true,
+    description: "Read-only access to view content"
+  },
 } as const;
 
 export type RoleName = keyof typeof ROLES;
 
 // Available permissions for each role
-export const ROLE_PERMISSIONS = {
+export const ROLE_PERMISSIONS: Record<RoleName, readonly PermissionKey[]> = {
   SUPER_ADMIN: [
     "manage_users",
     "manage_roles",
@@ -24,7 +130,7 @@ export const ROLE_PERMISSIONS = {
     "all_access",
   ],
   ADMIN: [
-    "manage_users", // Can only manage users with lower roles
+    "manage_users",
     "manage_products",
     "manage_categories",
     "manage_brands",
@@ -55,7 +161,7 @@ export const ROLE_PERMISSIONS = {
     "view_categories",
     "view_analytics",
   ],
-} as const;
+};
 
 // Helper function to get role level
 export function getRoleLevel(roleName: string): number {
